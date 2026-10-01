@@ -22,12 +22,53 @@ namespace WebApplication1.Controllers
         // GET: Test
 
         [HttpGet]
-        public ActionResult User()
+        public ActionResult Getuserbyid()
         {
-            var result = _User.User();
+            var result = _User.Getuserbyid();
             return Json(result, JsonRequestBehavior.AllowGet);
         }
 
+        [HttpGet]
+        public ActionResult Getuserbyserviceno()
+        {
+            var result = _User.Getuserbyserviceno();
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult adduser()
+        {
+            var result = _User.adduser();
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult deleteuserbyid()
+        {
+            var result = _User.deleteuserbyid();
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult deleteuserbysericeno()
+        {
+            var result = _User.deleteuserbysericeno();
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+        [HttpPost]
+        public ActionResult updateuserbyid()
+        {
+            var result = _User.updateuserbyid();
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult updateuserbyserviceno()
+        {
+            var result = _User.updateuserbyserviceno();
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+      
 
     }
 }
