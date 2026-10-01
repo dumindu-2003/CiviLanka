@@ -17,8 +17,8 @@ namespace WebApplication1.Models.RequestApiModels
         public string p_last_login_at { get; set; }
         public string p_created_by { get; set; }
         public string p_created_at { get; set; }
-        public string p_updated_at { get; set; }
-        public string p_updated_by { get; set; }
+       // public string p_updated_at { get; set; }
+       // public string p_updated_by { get; set; }
 
     }
 }

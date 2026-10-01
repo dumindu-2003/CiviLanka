@@ -13,8 +13,8 @@ namespace biZTrack.Static
 
             DateTime now = new DateTime();
 
-            //var filePath = @"C:\inetpub\wwwroot\backend-Test\BizTrack\ExceptionLogs.txt";
-            var filePath = @"D:\kusal\test\2022\WebApplication1\Exceptionlogs\ExceptionLogs.txt";
+            var filePath = @"D:\HCI assignment\CiviLanka\Backend\Exceptionlogs\ExceptionLogs.txt";
+            //var filePath = @"D:\kusal\test\2022\WebApplication1\Exceptionlogs\ExceptionLogs.txt";
 
             string message = now.ToString("MM/dd/yyyy HH:mm:ss") + " ~ " + methodName + " ~ " + exceptionMsg + ";";
 

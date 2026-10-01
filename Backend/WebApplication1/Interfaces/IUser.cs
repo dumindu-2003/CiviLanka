@@ -17,5 +17,6 @@ namespace WebApplication1.Interfaces
         Response deleteuserbysericeno(UserRequestAPI requestAPI);
         Response updateuserbyid(UserRequestAPI requestAPI);
         Response updateuserbyserviceno(UserRequestAPI requestAPI);
+        Response Login(UserRequestAPI requestAPI);
     }
 }

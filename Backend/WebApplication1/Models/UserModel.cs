@@ -17,7 +17,9 @@ namespace WebApplication1.Models
         public string last_login_at { get; set; }
         public string created_by { get; set; }
         public string created_at { get; set; }
-        public string updated_at { get; set; }
-        public string updated_by { get; set; }
+        public string officer_name { get; set; }
+        public string unit_name { get; set; }
+        public string role_name { get; set; }
+        public string role_code { get; set; }
     }
 }
