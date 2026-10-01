@@ -13,9 +13,8 @@ namespace WebApplication1
             var container = new UnityContainer();
 
             // Register your interfaces and implementations
-            container.RegisterType<ITest, DATest>();
             container.RegisterType<IUser, DAUser>();
-            container.RegisterType<IEmployee, DAEmployee>();
+           
 
             // Set the dependency resolver for MVC
             DependencyResolver.SetResolver(new UnityDependencyResolver(container));

@@ -16,6 +16,7 @@ namespace WebApplication1.Database_Layer
 
 
             _connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=civil_registration_db;Integrated Security=True;MultipleActiveResultSets=True;";
+
         }
 
         public SqlConnection GetOpenConnection()
