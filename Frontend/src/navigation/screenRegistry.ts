@@ -5,7 +5,7 @@ import DistrictDashboardScreen from '../screens/district/DistrictDashboardScreen
 import ReportsScreen from '../screens/district/ReportsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
 import NicApplicationReviewScreen from '../screens/district/NicApplicationReviewScreen';
-// Other developers: import your screens here
+import VillageDashboardScreen from '../screens/village/VillageDashboardScreen';
 
 // Backend `homeScreen` value -> component shown in the Home tab
 export const dashboards: Record<string, ComponentType<any>> = {
@@ -14,7 +14,7 @@ export const dashboards: Record<string, ComponentType<any>> = {
   // DeathDashboard: DeathDashboardScreen,        // DEV2
   // MarriageDashboard: MarriageDashboardScreen,  // DEV3
   // BankDashboard: BankDashboardScreen,          // DEV3
-  // VillageDashboard: VillageDashboardScreen,    // DEV4
+  VillageDashboard: VillageDashboardScreen,
 };
 
 // Backend `allowedScreens` value -> stack screen

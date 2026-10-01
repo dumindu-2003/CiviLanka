@@ -1,8 +1,26 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { tokenStorage } from './tokenStorage';
 
+const API_PORT = '5000';
+
+function apiBaseUrl() {
+  const configured = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
+  if (configured) return configured;
+
+  const host = Constants.expoConfig?.hostUri?.split(':')[0];
+  if (host && host !== 'localhost' && host !== '127.0.0.1') {
+    return `http://${host}:${API_PORT}`;
+  }
+  if (Platform.OS === 'android') return `http://10.0.2.2:${API_PORT}`;
+  return `http://localhost:${API_PORT}`;
+}
+
+const baseURL = apiBaseUrl();
+
 const http = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:5000', // Android emulator -> PC
+  baseURL,
   timeout: 15000,
 });
 
@@ -30,6 +48,11 @@ export async function callAction<T>(route: string, actionType: string, payload: 
     if (!res.data.success) throw new Error(res.data.message);
     return res.data.data;
   } catch (e: any) {
-    throw new Error(e?.response?.data?.message ?? e?.message ?? 'Network error');
+    const serverMessage = e?.response?.data?.message as string | undefined;
+    if (serverMessage) throw new Error(serverMessage);
+    if (!e?.response) {
+      throw new Error(`Cannot reach the server at ${baseURL}. Start the backend on this computer and keep the phone on the same Wi-Fi.`);
+    }
+    throw new Error(e?.message ?? 'Network error');
   }
 }

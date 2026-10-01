@@ -3,7 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAppSelector } from '../store/hooks';
 import { stackScreens } from './screenRegistry';
 import MainTabs from './MainTabs';
-import LandingScreen from '../screens/shared/LandingScreen';
+import SplashScreen from '../screens/shared/SplashScreen';
+import OnboardingScreen from '../screens/shared/OnboardingScreen';
 import LoginScreen from '../screens/shared/LoginScreen';
 import type { RootStackParamList } from './types';
 
@@ -15,9 +16,10 @@ export default function RootNavigator() {
 
   if (!user) {
     return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Landing" component={LandingScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false, animation: 'fade' }}>
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ gestureEnabled: false }} />
+        <Stack.Screen name="Login" component={LoginScreen} options={{ gestureEnabled: false }} />
       </Stack.Navigator>
     );
   }
