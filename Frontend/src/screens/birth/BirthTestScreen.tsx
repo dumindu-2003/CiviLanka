@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -7,6 +7,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AllBirthAplications from "./AllBirthApplications";
+import ApplicationForm from "./BirthApplicationForm";
 
 type Registration = {
   id: string;
@@ -30,21 +32,48 @@ const registrations: Registration[] = [
   },
 ];
 
-export default function BirthDashboard() {
+export default function BirthTestScreen() {
+  const [showApplication, setShowApplication] =
+  useState(false);
+
+  const [showAllApplications, setShowAllApplications] =
+  useState(false);
+
+  /* =====================================================
+     SHOW APPLICATION FORM
+  ====================================================== */
+
+  if (showApplication) {
+    return (
+        <ApplicationForm
+        onBack={() => setShowApplication(false)}
+        />
+    );
+  }
+
+  if (showAllApplications) {
+    return (
+        <AllBirthAplications
+        onBack={() => setShowAllApplications(false)}
+        />
+    );
+  }
+
+  /* =====================================================
+     DASHBOARD FUNCTIONS
+  ====================================================== */
+
   const handleNewRegistration = () => {
-    console.log("New Birth Registration");
-    // Later:
-    // router.push("/birth/application");
+    setShowApplication(true);
   };
 
   const handleViewCertificates = () => {
+    setShowAllApplications(true);
     console.log("View All Birth Certificates");
   };
 
   const handleViewApplication = (id: string) => {
     console.log("View application:", id);
-    // Later:
-    // router.push(`/birth/application/${id}`);
   };
 
   return (
@@ -60,13 +89,16 @@ export default function BirthDashboard() {
       {/* =====================================================
           HEADER
       ====================================================== */}
+
       <View className="h-[56px] flex-row items-center justify-between bg-[#0B2855] px-2">
         {/* Menu */}
         <Pressable
           className="h-10 w-10 items-center justify-center"
           onPress={() => console.log("Menu pressed")}
         >
-          <Text className="text-[25px] text-white">☰</Text>
+          <Text className="text-[25px] text-white">
+            ☰
+          </Text>
         </Pressable>
 
         {/* Title */}
@@ -80,7 +112,9 @@ export default function BirthDashboard() {
           onPress={() => console.log("Profile pressed")}
         >
           <View className="h-7 w-7 items-center justify-center rounded-full border-2 border-white">
-            <Text className="text-[13px] text-white">●</Text>
+            <Text className="text-[13px] text-white">
+              ●
+            </Text>
           </View>
         </Pressable>
       </View>
@@ -88,6 +122,7 @@ export default function BirthDashboard() {
       {/* =====================================================
           MAIN CONTENT
       ====================================================== */}
+
       <ScrollView
         className="flex-1 bg-[#F8F9FB]"
         showsVerticalScrollIndicator={false}
@@ -95,9 +130,8 @@ export default function BirthDashboard() {
           paddingBottom: 20,
         }}
       >
-        {/* =================================================
-            WELCOME SECTION
-        ================================================== */}
+        {/* WELCOME */}
+
         <View className="px-4 pb-3 pt-7">
           <Text className="text-[20px] font-bold text-[#222222]">
             Welcome, Birth Registrar
@@ -109,10 +143,10 @@ export default function BirthDashboard() {
         </View>
 
         {/* =================================================
-            STATISTICS CARDS
+            STATISTICS
         ================================================== */}
+
         <View className="mx-3 flex-row rounded-xl border border-[#E1E5EA] bg-white p-1 shadow-sm">
-          {/* New */}
           <StatCard
             icon="▣"
             label="NEW"
@@ -121,7 +155,6 @@ export default function BirthDashboard() {
             iconColor="#243C70"
           />
 
-          {/* Waiting */}
           <StatCard
             icon="⌛"
             label="WAIT"
@@ -130,7 +163,6 @@ export default function BirthDashboard() {
             iconColor="#243C70"
           />
 
-          {/* Done */}
           <StatCard
             icon="✓"
             label="DONE"
@@ -143,8 +175,10 @@ export default function BirthDashboard() {
         {/* =================================================
             ACTION BUTTONS
         ================================================== */}
+
         <View className="px-3 pt-4">
-          {/* New Registration */}
+          {/* NEW REGISTRATION */}
+
           <Pressable
             onPress={handleNewRegistration}
             className="h-[48px] flex-row items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
@@ -158,24 +192,26 @@ export default function BirthDashboard() {
             </Text>
           </Pressable>
 
-          {/* View Certificates */}
+          {/* VIEW CERTIFICATES */}
+
           <Pressable
             onPress={handleViewCertificates}
             className="mt-1 h-[48px] flex-row items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
-          >
+            >
             <Text className="mr-2 text-[17px] text-white">
-              ▣
+                ▣
             </Text>
 
             <Text className="text-[14px] font-medium text-white">
-              View All Birth Certificates
+                View All Birth Certificates
             </Text>
-          </Pressable>
+        </Pressable>
         </View>
 
         {/* =================================================
-            RECENT REGISTRATIONS HEADER
+            RECENT REGISTRATIONS
         ================================================== */}
+
         <View className="mt-6 flex-row items-center justify-between px-4">
           <Text className="text-[15px] font-bold text-[#292929]">
             Recent Registrations
@@ -186,9 +222,6 @@ export default function BirthDashboard() {
           </Text>
         </View>
 
-        {/* =================================================
-            REGISTRATION CARDS
-        ================================================== */}
         <View className="px-3">
           {registrations.map((registration) => (
             <RegistrationCard
@@ -205,8 +238,8 @@ export default function BirthDashboard() {
       {/* =====================================================
           BOTTOM NAVIGATION
       ====================================================== */}
+
       <View className="h-[64px] flex-row border-t border-[#E5E7EB] bg-white">
-        {/* Home */}
         <BottomNavItem
           icon="⌂"
           label="Home"
@@ -214,21 +247,18 @@ export default function BirthDashboard() {
           onPress={() => console.log("Home")}
         />
 
-        {/* News */}
         <BottomNavItem
           icon="▣"
           label="News"
           onPress={() => console.log("News")}
         />
 
-        {/* Notification */}
         <BottomNavItem
           icon="♧"
           label="Notification"
           onPress={() => console.log("Notification")}
         />
 
-        {/* Profile */}
         <BottomNavItem
           icon="♙"
           label="Profile"
@@ -297,30 +327,29 @@ function RegistrationCard({
   registration,
   onPress,
 }: RegistrationCardProps) {
-  const isPending = registration.status === "Pending";
+  const isPending =
+    registration.status === "Pending";
 
   return (
     <View className="mt-3 rounded-lg border border-[#E2E5E9] bg-white px-3 py-3 shadow-sm">
-      {/* Top row */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center">
-          {/* ID */}
           <View className="rounded bg-[#EEEEEE] px-2 py-1">
             <Text className="text-[9px] text-[#777777]">
               {registration.id}
             </Text>
           </View>
 
-          {/* Baby name */}
           <Text className="ml-2 text-[13px] font-medium text-[#333333]">
             {registration.babyName}
           </Text>
         </View>
 
-        {/* Status */}
         <View
           className={`rounded px-2 py-1 ${
-            isPending ? "bg-[#FF9900]" : "bg-[#329447]"
+            isPending
+              ? "bg-[#FF9900]"
+              : "bg-[#329447]"
           }`}
         >
           <Text className="text-[9px] font-semibold text-white">
@@ -329,7 +358,6 @@ function RegistrationCard({
         </View>
       </View>
 
-      {/* Bottom row */}
       <View className="mt-3 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Text className="mr-1 text-[13px] text-[#344563]">
@@ -341,7 +369,6 @@ function RegistrationCard({
           </Text>
         </View>
 
-        {/* View button */}
         <Pressable
           onPress={onPress}
           className="rounded-md bg-[#0B2855] px-4 py-2 active:opacity-80"
@@ -379,7 +406,9 @@ function BottomNavItem({
     >
       <Text
         className={`text-[20px] ${
-          active ? "text-[#0B2855]" : "text-[#687385]"
+          active
+            ? "text-[#0B2855]"
+            : "text-[#687385]"
         }`}
       >
         {icon}
