@@ -1,0 +1,4 @@
+10/03/2026 22:18:05 ~ Login ~ Login failed for user 'DEKSTOP-310HI4U\ASUS'. (18456) (SQLDriverConnect); [28000] [Microsoft][ODBC Driver 17 for SQL Server];
+10/03/2026 22:21:08 ~ Login ~ Login failed for user 'DEKSTOP-310HI4U\ASUS'. (18456) (SQLDriverConnect); [28000] [Microsoft][ODBC Driver 17 for SQL Server];
+10/03/2026 22:21:19 ~ Login ~ Login failed for user 'DEKSTOP-310HI4U\ASUS'. (18456) (SQLDriverConnect); [28000] [Microsoft][ODBC Driver 17 for SQL Server];
+10/03/2026 22:24:24 ~ Login ~ Unknown action_type for sp_auth.;
