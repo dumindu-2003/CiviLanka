@@ -1,0 +1,40 @@
+from DataAccess.DABase import DABase
+from Models.RequestApiModels.ApplicationRequestAPI import ApplicationRequestAPI, ApplicationSaveRequestAPI
+from Models.Response import Response
+from Static.ActionTypes import ApplicationAction
+
+
+class DAApplication(DABase):
+    """Same actions for sp_birth / sp_death / sp_marriage / sp_nic - the subclass only sets ProcedureName."""
+
+    def Dashboard(self, requestAPI: ApplicationRequestAPI) -> Response:
+        # 2 result sets: [new_entries, pending, approved] and [last 5 applications]
+        return self._Execute(requestAPI, ApplicationAction.DASHBOARD, "Dashboard", sets=[("summary", "row"), ("recent", "rows")])
+
+    def List(self, requestAPI: ApplicationRequestAPI) -> Response:
+        return self._Execute(requestAPI, ApplicationAction.LIST, "List", "rows")
+
+    def Get(self, requestAPI: ApplicationRequestAPI) -> Response:
+        return self._Execute(requestAPI, ApplicationAction.GET, "Get", "row")
+
+    def Create(self, requestAPI: ApplicationSaveRequestAPI) -> Response:
+        requestAPI.signoff_officer_id = None
+        if requestAPI.status == "Pending":                       # saving straight as Pending needs the sign-off officer
+            failure = self._VerifySignoff(requestAPI, "Create")
+            if failure is not None:
+                return failure
+        return self._Execute(requestAPI, ApplicationAction.CREATE, "Create", "row")
+
+    def Update(self, requestAPI: ApplicationSaveRequestAPI) -> Response:
+        requestAPI.signoff_officer_id = None
+        return self._Execute(requestAPI, ApplicationAction.UPDATE, "Update", "row")
+
+    def Submit(self, requestAPI: ApplicationSaveRequestAPI) -> Response:       # Draft -> Pending
+        failure = self._VerifySignoff(requestAPI, "Submit")
+        if failure is not None:
+            return failure
+        return self._Execute(requestAPI, ApplicationAction.SUBMIT, "Submit", "row")
+
+    def Delete(self, requestAPI: ApplicationSaveRequestAPI) -> Response:       # only own Draft
+        requestAPI.signoff_officer_id = None
+        return self._Execute(requestAPI, ApplicationAction.DELETE, "Delete", "row")
