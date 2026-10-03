@@ -5,6 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+import { useAppDispatch } from '../../store/hooks';
+import { login } from '../../actions/authAction';
+import { DEMO_MODE } from '../../config';
 import { AppBar, PortalBanner } from '../../components/landing/LandingHeader';
 import { HeroCarousel, Slide } from '../../components/landing/HeroCarousel';
 import { LandingTabBar } from '../../components/landing/LandingTabBar';
@@ -69,7 +72,14 @@ function InfoCard({ icon, title, children }: { icon: IconName; title: string; ch
 // Public home page shown before login (Figma "Home Screen").
 export default function LandingScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const goLogin = () => nav.navigate('Login');
+  const dispatch = useAppDispatch();
+
+  // DEMO_MODE = 1 (.env): Log in goes straight to the dashboard with mock data.
+  // DEMO_MODE = 0: opens the real Login form.
+  const goLogin = () =>
+    DEMO_MODE
+      ? dispatch(login({ username: 'demo', serviceNo: 'DR-001', password: 'demo' }))
+      : nav.navigate('Login');
 
   return (
     <View style={styles.root}>

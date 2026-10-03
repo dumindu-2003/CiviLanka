@@ -4,6 +4,17 @@ export interface AuthUser {
   serviceNo: string;
   designation: string;
   role: string; // value comes from the backend; no role list in the frontend
+
+  // Optional profile details (the backend can fill these in later)
+  nic?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  employeeId?: string;
+  department?: string;
+  officeLocation?: string;
 }
 
 export interface LoginPayload {
