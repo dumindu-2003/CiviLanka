@@ -18,9 +18,13 @@ export const dashboards: Record<string, ComponentType<any>> = {
 };
 
 // Backend `allowedScreens` value -> stack screen
-export const stackScreens: Record<string, { component: ComponentType<any>; title: string }> = {
+// headerShown: false = the screen draws its own header (default is true)
+export const stackScreens: Record<
+  string,
+  { component: ComponentType<any>; title: string; headerShown?: boolean }
+> = {
   Reports: { component: ReportsScreen, title: 'Reports' },
-  NicPendingList: { component: NicPendingListScreen, title: 'NIC Pending Applications' },
+  NicPendingList: { component: NicPendingListScreen, title: 'NIC Pending Applications', headerShown: false },
   NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review' },
 };
 

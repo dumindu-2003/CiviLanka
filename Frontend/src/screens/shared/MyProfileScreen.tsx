@@ -61,7 +61,23 @@ function SettingRow({ icon, label, right, onPress }: { icon: IconName; label: st
 export default function MyProfileScreen() {
   const dispatch = useAppDispatch();
   const nav = useNavigation<any>();
-  const user = useAppSelector((s) => s.auth.user);
+  const user = useAppSelector((s) =>
+    (s.auth as {
+      user?: {
+        fullName?: string;
+        designation?: string;
+        email?: string;
+        nic?: string;
+        dateOfBirth?: string;
+        gender?: string;
+        phone?: string;
+        address?: string;
+        employeeId?: string;
+        department?: string;
+        officeLocation?: string;
+      };
+    }).user,
+  );
 
   return (
     <View style={styles.root}>
