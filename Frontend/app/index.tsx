@@ -1,3 +1,18 @@
+// import BirthDashboard from "../src/screens/birth/BirthTestScreen";
+
+// export default function BirthDashboardScreen() {
+//   return <BirthDashboard />;
+// }
+
+import DeathDashboard from "../src/screens/death/DeathTestScreen";
+
+export default function DeathDashboardScreen() {
+  return <DeathDashboard />;
+}
+
+
+
+
 // import { StyleSheet, Text, View } from "react-native";
 
 // export default function Page() {
@@ -32,8 +47,3 @@
 //     color: "#38434D",
 //   },
 // });
-import BirthDashboard from "../src/screens/birth/BirthTestScreen";
-
-export default function BirthDashboardScreen() {
-  return <BirthDashboard />;
-}
