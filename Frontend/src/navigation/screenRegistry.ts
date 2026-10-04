@@ -6,7 +6,6 @@ import ReportsScreen from '../screens/district/ReportsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
 import NicApplicationReviewScreen from '../screens/district/NicApplicationReviewScreen';
 // Other developers: import your screens here
-
 // Backend `homeScreen` value -> component shown in the Home tab
 export const dashboards: Record<string, ComponentType<any>> = {
   DistrictDashboard: DistrictDashboardScreen,
@@ -18,10 +17,14 @@ export const dashboards: Record<string, ComponentType<any>> = {
 };
 
 // Backend `allowedScreens` value -> stack screen
-export const stackScreens: Record<string, { component: ComponentType<any>; title: string }> = {
+// headerShown: false = the screen draws its own header (default is true)
+export const stackScreens: Record<
+  string,
+  { component: ComponentType<any>; title: string; headerShown?: boolean }
+> = {
   Reports: { component: ReportsScreen, title: 'Reports' },
-  NicPendingList: { component: NicPendingListScreen, title: 'NIC Pending Applications' },
-  NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review' },
+  NicPendingList: { component: NicPendingListScreen, title: 'NIC Pending Applications', headerShown: false },
+   NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review', headerShown: false },
 };
 
 // Shown when the backend sends a key the app does not know (prevents a crash)

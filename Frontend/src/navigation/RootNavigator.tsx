@@ -33,7 +33,10 @@ export default function RootNavigator() {
             key={key}
             name={key as keyof RootStackParamList}
             component={stackScreens[key].component}
-            options={{ title: stackScreens[key].title }}
+            options={{
+              title: stackScreens[key].title,
+              headerShown: stackScreens[key].headerShown ?? true,
+            }}
           />
         ))}
     </Stack.Navigator>
