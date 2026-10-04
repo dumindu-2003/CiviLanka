@@ -24,7 +24,7 @@ const DEMO_RESULT: LoginResult = {
     officeLocation: 'Kaduwela',
   },
   homeScreen: 'DistrictDashboard',
-  allowedScreens: ['Reports', 'NicPendingList', 'NicApplicationReview'],
+  allowedScreens: ['Reports', 'NicPendingList', 'NicApplicationReview', 'AddProfile'],
 };
 
 export const authService = {

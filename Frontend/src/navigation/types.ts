@@ -2,6 +2,7 @@ export type RootStackParamList = {
   Landing: undefined;
   Login: undefined;
   MainTabs: undefined;
+  AddProfile: undefined;
   // District
   Reports: undefined;
   NicPendingList: undefined;

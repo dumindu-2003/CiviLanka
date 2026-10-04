@@ -6,7 +6,6 @@ import ReportsScreen from '../screens/district/ReportsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
 import NicApplicationReviewScreen from '../screens/district/NicApplicationReviewScreen';
 // Other developers: import your screens here
-
 // Backend `homeScreen` value -> component shown in the Home tab
 export const dashboards: Record<string, ComponentType<any>> = {
   DistrictDashboard: DistrictDashboardScreen,
@@ -25,7 +24,7 @@ export const stackScreens: Record<
 > = {
   Reports: { component: ReportsScreen, title: 'Reports' },
   NicPendingList: { component: NicPendingListScreen, title: 'NIC Pending Applications', headerShown: false },
-  NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review' },
+   NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review', headerShown: false },
 };
 
 // Shown when the backend sends a key the app does not know (prevents a crash)

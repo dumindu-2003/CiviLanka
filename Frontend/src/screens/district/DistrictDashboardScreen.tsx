@@ -28,7 +28,7 @@ const ACTIONS: { label: string; icon: IconName; route?: keyof RootStackParamList
   { label: 'View All Records', icon: 'grid-outline' },
   { label: 'Generate Report', icon: 'document-text-outline', route: 'Reports' },
   { label: 'Audit Trail', icon: 'time-outline' },
-  { label: 'Add Profile', icon: 'person-add-outline' },
+  { label: 'Add Profile', icon: 'person-add-outline', route: 'AddProfile' },
   { label: 'View Profile', icon: 'person-circle-outline', tab: 'Profile' },
   { label: 'NIC Request', icon: 'id-card-outline', route: 'NicPendingList' },
 ];
