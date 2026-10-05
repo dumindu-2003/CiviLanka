@@ -39,6 +39,10 @@ def VerifyCredentials(username: Optional[str], serviceNumber: Optional[str], pas
         return None, failure
 
     officer = res.ResultDataTable[0]
+    if "is_active" in officer and not officer["is_active"]:       # works even if the SP does not check it
+        failure.StatusCode = 401
+        failure.Result = "This account is inactive. Contact the System Administrator."
+        return None, failure
     if not VerifyPassword(password, officer["password"]):
         failure.StatusCode = 401
         failure.Result = INVALID_LOGIN
