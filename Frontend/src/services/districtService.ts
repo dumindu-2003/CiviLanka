@@ -2,9 +2,39 @@ import { apiClient, toSignoff } from './apiClient';
 import { DEMO_MODE } from '../config';
 import { demoDecide, demoQueue, demoSummary, wait } from './demoData';
 import type { SignOffCredentials } from '../types/auth';
+import type { Status } from '../components/StatusBadge';
 import type { ApplicationItem, Category, DashboardSummary } from '../types/district';
 
 // Needs permission APPLICATION_APPROVE (District Registrar). Reports need REPORT_VIEW / REPORT_GENERATE.
+
+const pick = <T = any>(row: Record<string, any>, ...keys: string[]): T | undefined => {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null) return row[key] as T;
+  }
+  return undefined;
+};
+
+const toStatus = (value: any): Status => {
+  const normalized = String(value ?? 'Pending').toLowerCase();
+  if (normalized === 'approved') return 'Approved';
+  if (normalized === 'rejected') return 'Rejected';
+  return 'Pending';
+};
+
+const normalizeSummary = (row: Record<string, any>): DashboardSummary => ({
+  pending: Number(pick(row, 'pending', 'Pending', 'pending_count') ?? 0),
+  approved: Number(pick(row, 'approved', 'Approved', 'approved_count') ?? 0),
+  rejected: Number(pick(row, 'rejected', 'Rejected', 'rejected_count') ?? 0),
+  totalRecords: Number(pick(row, 'totalRecords', 'total_records', 'TotalRecords', 'total') ?? 0),
+});
+
+const normalizeQueueItem = (row: Record<string, any>): ApplicationItem => ({
+  id: String(pick(row, 'id', 'app_ref', 'application_ref', 'applicationId', 'application_id') ?? ''),
+  category: (pick(row, 'category', 'application_type', 'type') ?? 'Birth') as ApplicationItem['category'],
+  applicantName: String(pick(row, 'applicantName', 'applicant_name', 'citizenName', 'full_name', 'name') ?? 'Unknown applicant'),
+  submittedOn: String(pick(row, 'submittedOn', 'submitted_on', 'created_at', 'submitted_date') ?? ''),
+  status: toStatus(pick(row, 'status', 'application_status')),
+});
 
 // ── DASHBOARD ──────────────────────────────────────────────────────────────
 // DistrictDashboardScreen -> the 4 tiles
@@ -15,7 +45,8 @@ export const getDistrictSummary = async (): Promise<DashboardSummary> => {
     await wait();
     return demoSummary();
   }
-  return apiClient.get<DashboardSummary>('/api/district/Summary');
+  const row = await apiClient.get<Record<string, any>>('/api/district/Summary');
+  return normalizeSummary(row ?? {});
 };
 
 // DistrictDashboardScreen -> category chips + application list (Birth / Death / Marriage; NIC is NOT in this list)
@@ -26,7 +57,8 @@ export const getDistrictQueue = async (category: Category): Promise<ApplicationI
     await wait();
     return demoQueue(category);
   }
-  return apiClient.get<ApplicationItem[]>('/api/district/List', { category });
+  const rows = await apiClient.get<Record<string, any>[]>('/api/district/List', { category });
+  return (rows ?? []).map(normalizeQueueItem).filter((item) => item.id);
 };
 
 // ── ONE APPLICATION (any type) ─────────────────────────────────────────────
@@ -46,8 +78,30 @@ export interface NicPendingItem {
   submittedOn: string;
   status: string;
   submittedBy: string | null; // village officer name
+  division?: string;
+  place?: string;
+  type?: string;
 }
-export const getNicPendingList = () => apiClient.get<NicPendingItem[]>('/api/district/NicPendingList');
+const normalizeNicPendingItem = (row: Record<string, any>): NicPendingItem => ({
+  id: String(pick(row, 'id', 'app_ref', 'application_ref', 'applicationId', 'application_id') ?? ''),
+  applicantName: String(pick(row, 'applicantName', 'applicant_name', 'citizenName', 'full_name', 'name') ?? 'Unknown applicant'),
+  submittedOn: String(pick(row, 'submittedOn', 'submitted_on', 'created_at', 'submitted_date') ?? ''),
+  status: String(pick(row, 'status', 'application_status') ?? 'Pending'),
+  submittedBy: (pick(row, 'submittedBy', 'submitted_by', 'officer_name', 'created_by_name') as string | undefined) ?? null,
+  division: pick(row, 'division', 'gnDivision', 'gn_division', 'sub_area'),
+  place: pick(row, 'place', 'district', 'city'),
+  type: pick(row, 'type', 'application_type', 'request_type'),
+});
+export const getNicPendingList = async () => {
+  if (DEMO_MODE) {
+    await wait();
+    return demoQueue('All')
+      .filter((item) => item.id.startsWith('NIC'))
+      .map((item) => ({ ...item, submittedBy: 'Demo officer' }));
+  }
+  const rows = await apiClient.get<Record<string, any>[]>('/api/district/NicPendingList');
+  return (rows ?? []).map(normalizeNicPendingItem).filter((item) => item.id);
+};
 
 // ── APPROVE / REJECT (needs the authorizing officer's username + service no + password) ──
 // DistrictDashboardScreen + NicApplicationReviewScreen -> "Authorize" modal

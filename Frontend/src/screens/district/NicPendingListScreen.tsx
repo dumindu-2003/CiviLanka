@@ -1,80 +1,23 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Alert, Modal, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { LandingTabBar } from '../../components/landing/LandingTabBar';
+import { getNicPendingList, type NicPendingItem } from '../../services/districtService';
 import { colors } from '../../theme/colors';
 
-interface NicApplication {
-  id: string; // e.g. NIC-APP-2026-88841
-  citizenName: string;
-  age: number;
-  type: string; // First-time NIC / Replacement
-  place: string;
-  officerName: string;
-  officerNo: string; // VO number
-  gnDivision: string;
-  submittedOn: string; // ISO date, e.g. 2026-10-18
-}
-
-// Demo data. Replace with an API call (nicService) when the backend is ready.
-const APPLICATIONS: NicApplication[] = [
-  {
-    id: 'NIC-APP-2026-88841',
-    citizenName: 'Saman Kumara Perera',
-    age: 20,
-    type: 'First-time NIC',
-    place: 'Colombo 03',
-    officerName: 'K. M. Bandara',
-    officerNo: 'VO-2024-8841',
-    gnDivision: 'GN Div 412 - Colombo Fort North',
-    submittedOn: '2026-10-18',
-  },
-  {
-    id: 'NIC-APP-2026-88938',
-    citizenName: 'Nadeesha Dilrukshi Senanayake',
-    age: 16,
-    type: 'First-time NIC',
-    place: 'Slave Island',
-    officerName: 'M. T. Hameed',
-    officerNo: 'VO-2023-5120',
-    gnDivision: 'GN Div 408 - Kompannaveediya',
-    submittedOn: '2026-10-18',
-  },
-  {
-    id: 'NIC-APP-2026-88915',
-    citizenName: 'Kasun Dinesh Jayawardena',
-    age: 34,
-    type: 'Replacement',
-    place: 'Kollupitiya',
-    officerName: 'W. A. Sunil Shantha',
-    officerNo: 'VO-2021-3319',
-    gnDivision: 'GN Div 415 - Kollupitiya West',
-    submittedOn: '2026-10-17',
-  },
-  {
-    id: 'NIC-APP-2026-88890',
-    citizenName: 'Fathima Rishana Mohamed',
-    age: 19,
-    type: 'First-time NIC',
-    place: 'Fort',
-    officerName: 'K. M. Bandara',
-    officerNo: 'VO-2024-8841',
-    gnDivision: 'GN Div 412 - Colombo Fort North',
-    submittedOn: '2026-10-17',
-  },
-];
-
-const TOTAL_PENDING = 18; // demo: total pending in the division (the list above shows only 4)
-const ALL = 'Colombo Fort (All)';
+const ALL = 'All divisions';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const fmtDate = (iso: string) => {
-  const [y, m, d] = iso.split('-');
-  return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`;
+  if (!iso) return '-';
+  const [datePart] = iso.split('T');
+  const [y, m, d] = datePart.split('-');
+  if (!y || !m || !d) return iso;
+  return `${Number(d)} ${MONTHS[Number(m) - 1] ?? ''} ${y}`;
 };
 
 export default function NicPendingListScreen() {
@@ -83,19 +26,43 @@ export default function NicPendingListScreen() {
   const [division, setDivision] = useState(ALL);
   const [newestFirst, setNewestFirst] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [applications, setApplications] = useState<NicPendingItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const divisions = useMemo(() => [ALL, ...Array.from(new Set(APPLICATIONS.map((a) => a.gnDivision)))], []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setApplications(await getNicPendingList());
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load NIC pending applications.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const divisions = useMemo(
+    () => [ALL, ...Array.from(new Set(applications.map((a) => a.division).filter((d): d is string => Boolean(d))))],
+    [applications],
+  );
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return APPLICATIONS.filter((a) => {
-      if (division !== ALL && a.gnDivision !== division) return false;
-      if (!q) return true;
-      return `${a.id} ${a.citizenName} ${a.officerName} ${a.officerNo}`.toLowerCase().includes(q);
-    }).sort((a, b) =>
-      newestFirst ? b.submittedOn.localeCompare(a.submittedOn) : a.submittedOn.localeCompare(b.submittedOn),
-    );
-  }, [query, division, newestFirst]);
+    return applications
+      .filter((a) => {
+        if (division !== ALL && a.division !== division) return false;
+        if (!q) return true;
+        return `${a.id} ${a.applicantName} ${a.submittedBy ?? ''} ${a.division ?? ''}`.toLowerCase().includes(q);
+      })
+      .sort((a, b) => (newestFirst ? b.submittedOn.localeCompare(a.submittedOn) : a.submittedOn.localeCompare(b.submittedOn)));
+  }, [applications, query, division, newestFirst]);
 
   const goTab = (name: string) => (nav as any).navigate('MainTabs', { screen: name });
 
@@ -103,14 +70,13 @@ export default function NicPendingListScreen() {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.navy} />
 
-      {/* App bar */}
       <SafeAreaView edges={['top']} style={styles.top}>
         <View style={styles.appBar}>
           <Pressable onPress={() => nav.goBack()} style={styles.backBtn} accessibilityLabel="Back">
             <Ionicons name="arrow-back" size={18} color={colors.navy} />
           </Pressable>
           <Text style={styles.appBarTitle} numberOfLines={1}>
-            Nic Pending Applications
+            NIC Pending Applications
           </Text>
           <View style={styles.appBarRight}>
             <Pressable onPress={() => setPickerOpen(true)} hitSlop={8} accessibilityLabel="Filters">
@@ -127,21 +93,20 @@ export default function NicPendingListScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
-        {/* Search */}
         <View style={styles.search}>
           <Ionicons name="search" size={16} color={colors.navy} />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search App Ref, Citizen Name, or VO No..."
+            placeholder="Search App Ref, Citizen Name, or Officer..."
             placeholderTextColor={colors.muted}
             style={styles.searchInput}
             returnKeyType="search"
           />
         </View>
 
-        {/* Filter row */}
         <View style={styles.filterRow}>
           <Pressable onPress={() => setPickerOpen(true)} style={[styles.filterBtn, { flex: 1 }]} accessibilityRole="button">
             <Ionicons name="location-outline" size={14} color={colors.white} />
@@ -157,8 +122,9 @@ export default function NicPendingListScreen() {
           </Pressable>
         </View>
 
-        {/* Cards */}
-        {visible.length === 0 ? <Text style={styles.empty}>No pending applications found.</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {visible.length === 0 && !loading ? <Text style={styles.empty}>No pending applications found.</Text> : null}
+
         {visible.map((a) => (
           <View key={a.id} style={styles.card}>
             <View style={styles.rowBetween}>
@@ -166,17 +132,15 @@ export default function NicPendingListScreen() {
               <Text style={styles.date}>{fmtDate(a.submittedOn)}</Text>
             </View>
 
-            <Text style={styles.name}>{a.citizenName}</Text>
-            <Text style={styles.meta}>
-              Age: {a.age} • {a.type} • {a.place}
-            </Text>
+            <Text style={styles.name}>{a.applicantName}</Text>
+            <Text style={styles.meta}>{[a.type ?? 'NIC Application', a.place].filter(Boolean).join(' - ')}</Text>
 
             <View style={styles.officerBox}>
               <View style={styles.rowBetween}>
-                <Text style={styles.officerText}>Officer: {a.officerName}</Text>
-                <Text style={styles.officerText}>{a.officerNo}</Text>
+                <Text style={styles.officerText}>Officer: {a.submittedBy ?? '-'}</Text>
+                <Text style={styles.officerText}>{a.status}</Text>
               </View>
-              <Text style={[styles.officerText, { marginTop: 2 }]}>{a.gnDivision}</Text>
+              <Text style={[styles.officerText, { marginTop: 2 }]}>{a.division ?? '-'}</Text>
             </View>
 
             <Pressable
@@ -190,7 +154,6 @@ export default function NicPendingListScreen() {
           </View>
         ))}
 
-        {/* Export + caption */}
         <Pressable
           onPress={() => Alert.alert('Export Pending Digest', 'This feature is not available yet.')}
           accessibilityRole="button"
@@ -200,13 +163,12 @@ export default function NicPendingListScreen() {
           <Text style={styles.exportText}>Export Pending Digest (PDF)</Text>
         </Pressable>
         <Text style={styles.caption}>
-          Showing {visible.length} of {TOTAL_PENDING} pending applications in Colombo Fort Secretariat Division
+          Showing {visible.length} of {applications.length} pending applications
         </Text>
       </ScrollView>
 
       <LandingTabBar onTabPress={goTab} />
 
-      {/* Division picker */}
       <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={() => setPickerOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setPickerOpen(false)}>
           <View style={styles.sheet}>
@@ -235,8 +197,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   top: { backgroundColor: colors.navy },
   content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
-
-  // app bar
   appBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 8 },
   backBtn: {
     width: 36,
@@ -256,8 +216,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // search + filters
   search: {
     height: 40,
     borderRadius: 8,
@@ -281,9 +239,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   filterText: { flex: 0, color: colors.white, fontSize: 12 },
+  error: { color: colors.red, fontSize: 12, marginBottom: 10 },
   empty: { textAlign: 'center', color: colors.muted, fontSize: 12, marginVertical: 24 },
-
-  // card
   card: { backgroundColor: colors.card, borderRadius: 12, padding: 16, marginBottom: 14 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   ref: { fontSize: 11, letterSpacing: 0.3, color: colors.muted },
@@ -303,8 +260,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   reviewText: { color: colors.white, fontSize: 12 },
-
-  // export + caption
   exportBtn: {
     marginTop: 8,
     height: 42,
@@ -319,8 +274,6 @@ const styles = StyleSheet.create({
   },
   exportText: { fontSize: 12, color: colors.muted },
   caption: { textAlign: 'center', fontSize: 11, color: colors.muted, marginTop: 8, paddingHorizontal: 20 },
-
-  // picker
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, paddingBottom: 28 },
   sheetTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 8 },
