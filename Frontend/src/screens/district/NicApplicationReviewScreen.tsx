@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
-import { districtService } from '../../services/districtService';
+import { approveApplication, rejectApplication } from '../../services/districtService';
 import type { Decision } from '../../types/district';
 import { colors } from '../../theme/colors';
 
@@ -148,12 +148,13 @@ export default function NicApplicationReviewScreen() {
     }
     setBusy(true);
     try {
-      // NOTE: remarks are collected but not sent yet (add them to the API payload when the backend supports it)
-      await districtService.decide(d.id, decision, {
+      const credentials = {
         officerUserName: username.trim(),
         authorizingServiceNo: serviceNo.trim(),
         officerPassword: password,
-      });
+      };
+      if (decision === 'APPROVE') await approveApplication(d.id, credentials);
+      else await rejectApplication(d.id, remarks.trim(), credentials); // remarks box = rejection reason
       Alert.alert(
         decision === 'APPROVE' ? 'Application approved' : 'Application rejected',
         `${d.id} has been ${decision === 'APPROVE' ? 'authorized' : 'rejected'}.`,
