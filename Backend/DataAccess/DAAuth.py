@@ -24,7 +24,7 @@ class DAAuth(DABase, IAuth):
             res = dbConnect.ProcedureRead(request, self.ProcedureName, self.ActionParam, self.HasOutput)
         if res.ResultStatusCode != "1":
             LogHandler.WriteToLog(res.ExceptionMessage or res.Result, methodName)
-            return None, self._Fail(res.ErrorCode, res.ExceptionMessage or res.Result)
+            return None, self._Fail(res.ErrorCode, res.ExceptionMessage or res.Result or "Authentication failed.")
 
         sets = res.ResultDataSet + [[], [], []]
         if not sets[0]:                                   # role inactive or officer inactive
@@ -45,11 +45,15 @@ class DAAuth(DABase, IAuth):
         officer, failure = VerifyCredentials(requestAPI.username, requestAPI.service_number, requestAPI.password, "Login")
         if failure is not None:
             return failure
+        if officer is None:
+            return self._Fail(401, "Invalid credentials.")
 
         # 2) ACCESS -> home screen / allowed screens / permissions
         access, failure = self._LoadAccess(officer["officer_id"], "Login")
         if failure is not None:
             return failure
+        if access is None:
+            return self._Fail(403, "No active role is assigned to this account.")
 
         # 3) LOGIN_SUCCESS -> stamps last_login_at + audit
         stamp = UserRequestAPI(p_officer_id=officer["officer_id"])
@@ -58,7 +62,7 @@ class DAAuth(DABase, IAuth):
             res = dbConnect.ProcedureRead(stamp, self.ProcedureName, self.ActionParam, self.HasOutput)
         if res.ResultStatusCode != "1":
             LogHandler.WriteToLog(res.ExceptionMessage or res.Result, "Login")
-            return self._Fail(res.ErrorCode, res.ExceptionMessage or res.Result)
+            return self._Fail(res.ErrorCode, res.ExceptionMessage or res.Result or "Authentication failed.")
 
         result.StatusCode = 200
         result.Result = "Success"
@@ -69,13 +73,13 @@ class DAAuth(DABase, IAuth):
                 "officer_id": officer["officer_id"],
                 "username": officer["username"],
                 "service_number": officer["service_number"],
-                "officer_name": officer["officer_name"],
-                "unit_name": officer["unit_name"],
+                "officer_name": officer.get("officer_name"),
+                "unit_name": officer.get("unit_name"),
                 "role_id": officer["role_id"],
                 "role_code": officer["role_code"],
                 "role_name": officer["role_name"],
                 "must_change_password": bool(officer["must_change_password"]),
-                "last_login_at": officer["last_login_at"],
+                "last_login_at": officer.get("last_login_at"),
             },
             "home_screen": access["home_screen"],
             "allowed_screens": access["allowed_screens"],
