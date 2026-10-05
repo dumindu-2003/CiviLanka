@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { login, logout } from '../actions/authAction';
 import type { AuthUser } from '../types/auth';
 
-interface AuthState {
+export interface AuthState {
   user: AuthUser | null;
   token: string | null;
   homeScreen: string | null;
