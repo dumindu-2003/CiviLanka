@@ -61,7 +61,8 @@ export const apiClient = {
     try {
       const fd = new FormData();
       fd.append('file', file as any);
-      const res = await http.post<ApiResponse<T>>(url, fd, {
+            const res = await http.post<ApiResponse<T>>(url, fd, {
+        timeout: 60000,
         headers: { 'Content-Type': 'multipart/form-data' },
         transformRequest: (d) => d,
       });

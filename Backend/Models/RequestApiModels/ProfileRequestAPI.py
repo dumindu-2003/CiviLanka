@@ -6,6 +6,10 @@ from Models.RequestApiModels.OfficerRequestAPI import OfficerRequestAPI
 class ProfileRequestAPI(OfficerRequestAPI):
     officer_name: Optional[str] = None
     officer_phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    date_of_birth: Optional[str] = None      # "YYYY-MM-DD"
+    gender: Optional[str] = None             # Male / Female / Other
 
 
 class ProfilePhotoRequestAPI(OfficerRequestAPI):
