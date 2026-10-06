@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -14,10 +14,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
-import { districtService } from '../../services/districtService';
+import { approveApplication, getApplicationDetail, rejectApplication } from '../../services/districtService';
 import type { Decision } from '../../types/district';
 import { colors } from '../../theme/colors';
 
@@ -68,6 +68,30 @@ const DETAILS: Detail[] = [
 ];
 
 const getDetail = (id: string): Detail => DETAILS.find((d) => d.id === id) ?? { ...DETAILS[0], id };
+const pick = <T = any,>(row: Record<string, any> | null, ...keys: string[]): T | undefined => {
+  if (!row) return undefined;
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null) return row[key] as T;
+  }
+  return undefined;
+};
+
+const hydrateDetail = (fallback: Detail, row: Record<string, any> | null): Detail => ({
+  ...fallback,
+  id: String(pick(row, 'id', 'app_ref', 'application_ref', 'application_id') ?? fallback.id),
+  submitted: String(pick(row, 'submitted', 'submitted_on', 'created_at', 'submitted_date') ?? fallback.submitted),
+  division: String(pick(row, 'division', 'gn_division', 'sub_area', 'district') ?? fallback.division),
+  officer: String(pick(row, 'officer', 'officer_name', 'submitted_by', 'created_by_name') ?? fallback.officer),
+  voNo: String(pick(row, 'voNo', 'vo_no', 'service_number', 'officer_service_number') ?? fallback.voNo),
+  gn: String(pick(row, 'gn', 'gn_division', 'sub_area') ?? fallback.gn),
+  name: String(pick(row, 'name', 'full_name', 'applicant_name', 'citizenName') ?? fallback.name),
+  initials: String(pick(row, 'initials', 'name_with_initials') ?? fallback.initials),
+  type: String(pick(row, 'type', 'application_type', 'request_type') ?? fallback.type),
+  dob: String(pick(row, 'dob', 'date_of_birth') ?? fallback.dob),
+  age: Number(pick(row, 'age') ?? fallback.age),
+  phone: String(pick(row, 'phone', 'mobile_no', 'contact_no') ?? fallback.phone),
+  address: String(pick(row, 'address', 'permanent_address') ?? fallback.address),
+});
 
 const officerInitials = (n: string) => {
   const p = n.replace(/\./g, '').split(' ').filter(Boolean);
@@ -129,13 +153,34 @@ function AuthField({ label, icon, ...props }: { label: string; icon?: IconName }
 export default function NicApplicationReviewScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'NicApplicationReview'>>();
-  const d = getDetail(params.applicationId);
+  const fallbackDetail = getDetail(params.applicationId);
 
+  const [detailRow, setDetailRow] = useState<Record<string, any> | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [remarks, setRemarks] = useState('');
   const [username, setUsername] = useState('');
   const [serviceNo, setServiceNo] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      setLoadError(null);
+      getApplicationDetail(params.applicationId)
+        .then((row) => {
+          if (active) setDetailRow(row);
+        })
+        .catch((e: any) => {
+          if (active) setLoadError(e?.message ?? 'Failed to load application details.');
+        });
+      return () => {
+        active = false;
+      };
+    }, [params.applicationId]),
+  );
+
+  const d = hydrateDetail(fallbackDetail, detailRow);
 
   const submit = async (decision: Decision) => {
     if (!username.trim() || !serviceNo.trim() || !password) {
@@ -148,12 +193,13 @@ export default function NicApplicationReviewScreen() {
     }
     setBusy(true);
     try {
-      // NOTE: remarks are collected but not sent yet (add them to the API payload when the backend supports it)
-      await districtService.decide(d.id, decision, {
+      const credentials = {
         officerUserName: username.trim(),
         authorizingServiceNo: serviceNo.trim(),
         officerPassword: password,
-      });
+      };
+      if (decision === 'APPROVE') await approveApplication(d.id, credentials);
+      else await rejectApplication(d.id, remarks.trim(), credentials); // remarks box = rejection reason
       Alert.alert(
         decision === 'APPROVE' ? 'Application approved' : 'Application rejected',
         `${d.id} has been ${decision === 'APPROVE' ? 'authorized' : 'rejected'}.`,
@@ -206,6 +252,8 @@ export default function NicApplicationReviewScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {loadError ? <Text style={styles.loadError}>{loadError}</Text> : null}
+
           {/* Queue strip (text is a guess - the Figma text is unreadable) */}
           <View style={styles.queueStrip}>
             <View style={styles.rowCenter}>
@@ -431,6 +479,7 @@ const styles = StyleSheet.create({
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   rowGap: { flexDirection: 'row', gap: 12 },
+  loadError: { color: colors.red, fontSize: 12 },
 
   // app bar
   appBar: { minHeight: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 12 },

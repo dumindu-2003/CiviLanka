@@ -1,30 +1,19 @@
-import { http } from './apiClient';
+import { apiClient } from './apiClient';
 import { DEMO_MODE } from '../config';
-import type { AuthUser, LoginPayload, LoginResult } from '../types/auth';
+import { DEMO_LOGIN, wait } from './demoData';
+import type { LoginPayload, LoginResult } from '../types/auth';
+
+// Used by: LoginScreen (via actions/authAction.ts)
 
 const VILLAGE_HOME = 'VillageDashboard';
 
-const DEMO_RESULT: LoginResult = {
-  token: 'demo-token',
-  user: {
-    id: '1',
-    fullName: 'Saman Perera',
-    serviceNo: 'DR-001',
-    designation: 'District Registrar',
-    role: 'DISTRICT_REGISTRAR',
-    nic: '199012345678',
-    dateOfBirth: '1990-05-15',
-    gender: 'Male',
-    email: 'saman.perera@gov.lk',
-    phone: '+94 77 123 4567',
-    address: 'No. 45, Main Street, Colombo',
-    employeeId: 'EMP-2024-001',
-    department: 'Divisional Secretariat',
-    officeLocation: 'Kaduwela',
-  },
-  homeScreen: 'DistrictDashboard',
-  allowedScreens: ['Reports', 'NicPendingList', 'NicApplicationReview', 'AddProfile'],
-};
+const VILLAGE_FORM_SCREENS = [
+  'NicPersonalDetails',
+  'NicContactFamily',
+  'NicDocuments',
+  'NicDeclaration',
+  'NicReceipt',
+];
 
 const VILLAGE_DEMO: LoginResult = {
   token: 'demo-token-village',
@@ -38,7 +27,7 @@ const VILLAGE_DEMO: LoginResult = {
     officeLocation: 'Colombo',
   },
   homeScreen: VILLAGE_HOME,
-  allowedScreens: ['NicPersonalDetails', 'NicContactFamily', 'NicDocuments', 'NicDeclaration', 'NicReceipt'],
+  allowedScreens: VILLAGE_FORM_SCREENS,
 };
 
 function looksLikeVillage(value: string) {
@@ -49,8 +38,6 @@ function homeForOfficer(homeScreen: string, role: string, designation: string) {
   if (homeScreen === VILLAGE_HOME || looksLikeVillage(`${role} ${designation} ${homeScreen}`)) return VILLAGE_HOME;
   return homeScreen;
 }
-
-const VILLAGE_FORM_SCREENS = ['NicPersonalDetails', 'NicContactFamily', 'NicDocuments', 'NicDeclaration', 'NicReceipt'];
 
 function screensFor(homeScreen: string, screens: string[]) {
   if (homeScreen !== VILLAGE_HOME) return screens;
@@ -65,45 +52,68 @@ function isVillageLogin(p: LoginPayload) {
   return looksLikeVillage(`${p.username} ${p.serviceNo}`);
 }
 
-function toLoginResult(raw: any): LoginResult {
-  const officer = raw?.officer ?? raw?.user ?? {};
-  const role = String(officer.role_code ?? officer.role ?? '');
-  const designation = String(officer.role_name ?? officer.designation ?? '');
-  const user: AuthUser = {
-    id: String(officer.officer_id ?? officer.id ?? ''),
-    fullName: officer.officer_name ?? officer.fullName ?? '',
-    serviceNo: officer.service_number ?? officer.serviceNo ?? '',
-    designation: designation || 'Officer',
-    role,
-    email: officer.email,
-    phone: officer.phone,
-    department: officer.unit_name ?? officer.department,
+// ── SIGN IN ────────────────────────────────────────────────────────────────
+// POST /api/auth/Login
+// body     : { username, service_number, password }
+// returns  : { token, officer{...}, home_screen, allowed_screens[], permissions[] }
+// Mapped to the LoginResult shape the Redux auth slice already uses.
+interface LoginResponse {
+  token: string;
+  officer: {
+    officer_id: number;
+    username: string;
+    service_number: string;
+    officer_name: string | null;
+    unit_name: string | null;
+    role_code: string;
+    role_name: string;
+    must_change_password: boolean;
   };
-  return {
-    token: raw?.token ?? '',
-    user,
-    homeScreen: homeForOfficer(String(raw?.homeScreen ?? raw?.home_screen ?? ''), role, designation),
-    allowedScreens: screensFor(
-      homeForOfficer(String(raw?.homeScreen ?? raw?.home_screen ?? ''), role, designation),
-      raw?.allowedScreens ?? raw?.allowed_screens ?? [],
-    ),
-  };
+  home_screen: string;
+  allowed_screens: string[];
+  permissions: string[];
 }
 
-export const authService = {
-  login: async (p: LoginPayload): Promise<LoginResult> => {
-    if (DEMO_MODE) return isVillageLogin(p) ? VILLAGE_DEMO : DEMO_RESULT;
-
-    const res = await http.post('/api/auth/Login', {
-      username: p.username,
-      service_number: p.serviceNo,
-      password: p.password,
-    });
-    const body = res.data ?? {};
-    if (typeof body.StatusCode === 'number' && body.StatusCode !== 200) {
-      throw new Error(body.Result || 'Login failed');
-    }
-    if (body.success === false) throw new Error(body.message || 'Login failed');
-    return toLoginResult(body.ResultSet ?? body.data ?? body);
-  },
+export const loginOfficer = async (p: LoginPayload): Promise<LoginResult> => {
+  if (DEMO_MODE) {
+    await wait();
+    return isVillageLogin(p) ? VILLAGE_DEMO : DEMO_LOGIN;
+  }
+  const r = await apiClient.post<LoginResponse>('/api/auth/Login', {
+    username: p.username,
+    service_number: p.serviceNo,
+    password: p.password,
+  });
+  const role = r.officer.role_code;
+  const designation = r.officer.role_name;
+  const homeScreen = homeForOfficer(r.home_screen, role, designation);
+  return {
+    token: r.token,
+    user: {
+      id: String(r.officer.officer_id),
+      fullName: r.officer.officer_name ?? r.officer.username,
+      serviceNo: r.officer.service_number,
+      designation,
+      role,
+      officeLocation: r.officer.unit_name ?? undefined,
+    },
+    homeScreen,
+    allowedScreens: screensFor(homeScreen, r.allowed_screens),
+  };
 };
+
+// ── REFRESH SCREENS / PERMISSIONS ──────────────────────────────────────────
+// GET /api/auth/Access        (needs token)
+export const getAccess = () =>
+  apiClient.get<{ role_code: string; home_screen: string; allowed_screens: string[]; permissions: string[] }>(
+    '/api/auth/Access',
+  );
+
+// ── CHANGE PASSWORD ────────────────────────────────────────────────────────
+// POST /api/auth/ChangePassword   (MyProfileScreen -> "Change Password")
+// new password: min 8 characters
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  apiClient.post<unknown>('/api/auth/ChangePassword', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });

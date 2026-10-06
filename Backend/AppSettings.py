@@ -26,3 +26,8 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))
 
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()]
+
+# ---- profile photo upload -------------------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "Uploads")          # images are saved here (the folder is created automatically)
+MAX_PHOTO_BYTES = 2 * 1024 * 1024                        # 2 MB - same limit as the SQL check constraint

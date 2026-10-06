@@ -60,6 +60,9 @@ class AuditAction:           # sp_audit
 class ProfileAction:         # sp_profile
     GET = 1
     UPDATE_CONTACT = 2
+    PHOTO_UPLOAD = 3
+    PHOTO_GET = 4
+    PHOTO_DELETE = 5
 
 
 class CitizenAction:         # sp_citizen

@@ -3,7 +3,11 @@
 declare const process: {
 	env: {
 		EXPO_PUBLIC_DEMO_MODE?: string;
+		EXPO_PUBLIC_API_URL?: string;
 	};
 };
 
 export const DEMO_MODE = process.env.EXPO_PUBLIC_DEMO_MODE === '1';
+
+// FastAPI backend address (see .env). Default = Android emulator -> your PC
+export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8000').replace(/\/+$/, '');
