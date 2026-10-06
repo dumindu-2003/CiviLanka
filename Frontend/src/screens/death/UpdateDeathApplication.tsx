@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Pressable,
   ScrollView,
@@ -7,44 +7,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import {
-  DeathApplication,
-  DeathStatus,
-} from "./AllDeathApplications";
+import type { DeathApplication, DeathStatus } from "../../types/death";
 
 type Props = {
   application: DeathApplication;
   onBack: () => void;
-  onUpdate: (application: DeathApplication) => void;
+  onEdit: () => void;
 };
 
 export default function UpdateDeathApplication({
   application,
   onBack,
-  onUpdate,
+  onEdit,
 }: Props) {
-  const [status, setStatus] = useState<DeathStatus>(
-    application.status || "Open"
-  );
-
-  const [showDropdown, setShowDropdown] =
-    useState(false);
-
-  const statuses: DeathStatus[] = [
-    "Open",
-    "Approved",
-    "Rejected",
-  ];
-
-  const handleUpdate = () => {
-    onUpdate({
-      ...application,
-      status: status,
-    });
-  };
-
-  const getStatusTextColor = () => {
+  const getStatusTextColor = (status: DeathStatus) => {
     if (status === "Approved") {
       return "text-[#16804B]";
     }
@@ -118,7 +94,7 @@ export default function UpdateDeathApplication({
 
           <Text className="mt-1 text-[10px] text-[#737B87]">
             Review the death registration details and
-            update the application status.
+            edit the application information.
           </Text>
         </View>
 
@@ -139,17 +115,17 @@ export default function UpdateDeathApplication({
 
           <InfoRow
             label="Date of Death"
-            value={application.dateOfDeath}
+            value={application.dateOfDemise}
           />
 
           <InfoRow
             label="Time of Death"
-            value={application.timeOfDeath}
+            value={application.timeOfDemise}
           />
 
           <InfoRow
             label="Place of Death"
-            value={application.placeOfDeath}
+            value={application.placeOfDemise}
           />
         </SectionCard>
 
@@ -165,7 +141,7 @@ export default function UpdateDeathApplication({
 
           <InfoRow
             label="NIC / Identity Number"
-            value={application.nic}
+            value={application.deceasedNic}
           />
 
           <InfoRow
@@ -180,12 +156,12 @@ export default function UpdateDeathApplication({
 
           <InfoRow
             label="Date of Death"
-            value={application.dateOfDeath}
+            value={application.dateOfDemise}
           />
 
           <InfoRow
             label="Time of Death"
-            value={application.timeOfDeath}
+            value={application.timeOfDemise}
           />
 
           <InfoRow
@@ -216,7 +192,7 @@ export default function UpdateDeathApplication({
 
           <InfoRow
             label="NIC / Passport"
-            value={application.informantNic}
+            value={application.nic}
           />
 
           <InfoRow
@@ -234,6 +210,15 @@ export default function UpdateDeathApplication({
             value={application.informantAddress}
           />
         </SectionCard>
+
+        <Pressable
+          onPress={onEdit}
+          className="mb-4 items-center rounded-xl border border-[#0B2855] bg-white py-4"
+        >
+          <Text className="text-[13px] font-bold text-[#0B2855]">
+            Edit Application Details
+          </Text>
+        </Pressable>
 
         {/* =================================================
             CAUSE OF DEATH
@@ -265,102 +250,14 @@ export default function UpdateDeathApplication({
           <Text className="mb-2 text-[9px] font-medium text-[#626A73]">
             Registration Status
           </Text>
-
-          {/* Dropdown button */}
-
-          <Pressable
-            onPress={() =>
-              setShowDropdown(!showDropdown)
-            }
-            className="min-h-[43px] flex-row items-center rounded-lg border border-[#D8DDE4] bg-white px-3"
+          <Text
+            className={`text-[11px] font-bold ${getStatusTextColor(
+              application.status
+            )}`}
           >
-            <Text
-              className={`flex-1 text-[11px] font-bold ${getStatusTextColor()}`}
-            >
-              {status}
-            </Text>
-
-            <Text className="text-[14px] text-[#0B2855]">
-              {showDropdown ? "⌃" : "⌄"}
-            </Text>
-          </Pressable>
-
-          {/* Dropdown options */}
-
-          {showDropdown && (
-            <View className="mt-2 overflow-hidden rounded-lg border border-[#D8DDE4] bg-white">
-              {statuses.map((item) => {
-                const selected = status === item;
-
-                return (
-                  <Pressable
-                    key={item}
-                    onPress={() => {
-                      setStatus(item);
-                      setShowDropdown(false);
-                    }}
-                    className="flex-row items-center border-b border-[#EEEEEE] px-3 py-3"
-                  >
-                    <View
-                      className={`mr-3 h-[10px] w-[10px] rounded-full ${
-                        item === "Approved"
-                          ? "bg-[#16804B]"
-                          : item === "Rejected"
-                          ? "bg-[#C62828]"
-                          : "bg-[#0B2855]"
-                      }`}
-                    />
-
-                    <Text
-                      className={`flex-1 text-[11px] font-medium ${
-                        item === "Approved"
-                          ? "text-[#16804B]"
-                          : item === "Rejected"
-                          ? "text-[#C62828]"
-                          : "text-[#0B2855]"
-                      }`}
-                    >
-                      {item}
-                    </Text>
-
-                    {selected && (
-                      <Text className="text-[15px] font-bold text-[#0B2855]">
-                        ✓
-                      </Text>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-
-          {/* Current status */}
-
-          <View className="mt-3 rounded-lg bg-[#F3F5F7] p-3">
-            <Text className="text-[8px] text-[#737B87]">
-              CURRENT SELECTED STATUS
-            </Text>
-
-            <Text
-              className={`mt-1 text-[15px] font-bold ${getStatusTextColor()}`}
-            >
-              {status}
-            </Text>
-          </View>
-        </SectionCard>
-
-        {/* =================================================
-            UPDATE BUTTON
-        ================================================== */}
-
-        <Pressable
-          onPress={handleUpdate}
-          className="mt-1 h-[45px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
-        >
-          <Text className="text-[11px] font-bold text-white">
-            Update Death Application
+            {application.status === "Draft" ? "Open" : application.status}
           </Text>
-        </Pressable>
+        </SectionCard>
 
         {/* Back button */}
 

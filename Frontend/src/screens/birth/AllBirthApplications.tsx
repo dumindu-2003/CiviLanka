@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -9,95 +11,76 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import UpdateBirthApplication from "./UpdateBirthApplication";
-
-type RegistrationStatus = "Open" | "Approved" | "Rejected";
-
-type Registration = {
-  id: string;
-  babyName: string;
-  fatherName: string;
-  motherName: string;
-  birthDate: string;
-  birthPlace: string;
-  status: RegistrationStatus;
-};
-
-// Initial application data
-const initialRegistrations: Registration[] = [
-  {
-    id: "B001",
-    babyName: "Baby Perera",
-    fatherName: "Kasun Perera",
-    motherName: "Nimali Perera",
-    birthDate: "2026-09-01",
-    birthPlace: "Colombo National Hospital",
-    status: "Open",
-  },
-  {
-    id: "B002",
-    babyName: "Baby Silva",
-    fatherName: "Nuwan Silva",
-    motherName: "Tharushi Silva",
-    birthDate: "2026-08-28",
-    birthPlace: "Negombo General Hospital",
-    status: "Approved",
-  },
-  {
-    id: "B003",
-    babyName: "Baby Fernando",
-    fatherName: "Dinesh Fernando",
-    motherName: "Sachini Fernando",
-    birthDate: "2026-08-25",
-    birthPlace: "Kalubowila Hospital",
-    status: "Open",
-  },
-  {
-    id: "B004",
-    babyName: "Baby Kumara",
-    fatherName: "Amal Kumara",
-    motherName: "Dilani Kumara",
-    birthDate: "2026-08-20",
-    birthPlace: "Kandy General Hospital",
-    status: "Rejected",
-  },
-];
+import BirthApplicationForm from "./BirthApplicationForm";
+import {
+  getBirthApplication,
+  loadBirthApplications,
+  updateBirthApplication,
+} from "../../actions/birthAction";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import type { BirthApplication } from "../../types/birth";
 
 type Props = {
   onBack: () => void;
 };
 
 export default function AllBirthAplications({ onBack }: Props) {
-  const [registrations, setRegistrations] = useState<Registration[]>(
-    initialRegistrations
-  );
-
+  const dispatch = useAppDispatch();
+  const registrations = useAppSelector((state) => state.birth.queue);
+  const status = useAppSelector((state) => state.birth.status);
   const [selectedApplication, setSelectedApplication] =
-    useState<Registration | null>(null);
+    useState<BirthApplication | null>(null);
+  const [editingApplication, setEditingApplication] = useState(false);
+
+  useEffect(() => {
+    void dispatch(loadBirthApplications());
+  }, [dispatch]);
 
   // Open selected application
-  const handleViewApplication = (registration: Registration) => {
-    setSelectedApplication(registration);
-  };
-
-  // Update application status
-  const handleUpdateApplication = (updatedApplication: Registration) => {
-    setRegistrations((previous) =>
-      previous.map((item) =>
-        item.id === updatedApplication.id ? updatedApplication : item
-      )
-    );
-
-    setSelectedApplication(null);
+  const handleViewApplication = async (registration: BirthApplication) => {
+    try {
+      setSelectedApplication(await dispatch(getBirthApplication(registration.id)).unwrap());
+      setEditingApplication(false);
+    } catch (error) {
+      Alert.alert(
+        "Unable to open application",
+        error instanceof Error ? error.message : "Please try again."
+      );
+    }
   };
 
   // If an application is selected,
   // show UpdateBirthApplication screen
   if (selectedApplication) {
+    if (editingApplication) {
+      const { id, status: applicationStatus, submittedOn, ...initialData } = selectedApplication;
+      void submittedOn;
+      const saveChanges = async (payload: typeof initialData) => {
+        await dispatch(updateBirthApplication({
+          id,
+          payload,
+          status: applicationStatus,
+        })).unwrap();
+        await dispatch(loadBirthApplications()).unwrap();
+        setEditingApplication(false);
+        setSelectedApplication(null);
+        Alert.alert("Application updated", "Birth application details were saved.");
+      };
+
+      return (
+        <BirthApplicationForm
+          initialData={initialData}
+          onBack={() => setEditingApplication(false)}
+          onUpdate={saveChanges}
+        />
+      );
+    }
+
     return (
       <UpdateBirthApplication
         registration={selectedApplication}
         onBack={() => setSelectedApplication(null)}
-        onUpdate={handleUpdateApplication}
+        onEdit={() => setEditingApplication(true)}
       />
     );
   }
@@ -105,9 +88,7 @@ export default function AllBirthAplications({ onBack }: Props) {
   // Counts
   const totalCount = registrations.length;
 
-  const openCount = registrations.filter(
-    (item) => item.status === "Open"
-  ).length;
+  const openCount = registrations.filter((item) => item.status === "Draft").length;
 
   const approvedCount = registrations.filter(
     (item) => item.status === "Approved"
@@ -224,7 +205,9 @@ export default function AllBirthAplications({ onBack }: Props) {
 
         {/* ================= APPLICATION LIST ================= */}
         <View>
-          {registrations.map((registration) => (
+          {status === "loading" && registrations.length === 0 ? (
+            <ActivityIndicator className="mt-4" />
+          ) : registrations.map((registration) => (
             <BirthApplicationCard
               key={registration.id}
               registration={registration}
@@ -236,7 +219,13 @@ export default function AllBirthAplications({ onBack }: Props) {
         </View>
 
         {/* Empty State */}
-        {registrations.length === 0 && (
+        {status === "failed" && registrations.length === 0 && (
+          <Text className="text-center text-[12px] text-[#C62828]">
+            Unable to load birth applications.
+          </Text>
+        )}
+
+        {status !== "loading" && registrations.length === 0 && (
           <View className="items-center rounded-xl border border-[#E3E7ED] bg-white px-5 py-10">
             <Text className="text-[16px] font-bold text-[#171717]">
               No Applications
@@ -257,7 +246,7 @@ export default function AllBirthAplications({ onBack }: Props) {
 ========================================================= */
 
 type CardProps = {
-  registration: Registration;
+  registration: BirthApplication;
   onView: () => void;
 };
 
@@ -313,7 +302,7 @@ function BirthApplicationCard({
             <Text
               className={`text-[10px] font-bold ${statusStyle.text}`}
             >
-              {registration.status}
+              {registration.status === "Draft" ? "Open" : registration.status}
             </Text>
           </View>
         </View>
@@ -362,7 +351,7 @@ function BirthApplicationCard({
           <View className="mb-3 flex-row">
             <View className="w-[110px]">
               <Text className="text-[10px] text-[#737B87]">
-                Father's Name
+                Father&apos;s Name
               </Text>
             </View>
 
@@ -375,7 +364,7 @@ function BirthApplicationCard({
           <View className="flex-row">
             <View className="w-[110px]">
               <Text className="text-[10px] text-[#737B87]">
-                Mother's Name
+                Mother&apos;s Name
               </Text>
             </View>
 

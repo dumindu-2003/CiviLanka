@@ -1,9 +1,8 @@
-import { callAction } from './apiClient';
+import { requestApi } from './apiClient';
 import { DEMO_MODE } from '../config';
 import type { LoginPayload, LoginResult } from '../types/auth';
 
 const ROUTE = 'auth';
-const ACTION = { LOGIN: 'LOGIN' } as const;
 
 const DEMO_RESULT: LoginResult = {
   token: 'demo-token',
@@ -30,6 +29,35 @@ const DEMO_RESULT: LoginResult = {
 export const authService = {
   login: async (p: LoginPayload): Promise<LoginResult> => {
     if (DEMO_MODE) return DEMO_RESULT;
-    return callAction<LoginResult>(ROUTE, ACTION.LOGIN, p);
+    const result = await requestApi<{
+      token: string;
+      officer: {
+        officer_id: number;
+        username: string;
+        service_number: string;
+        officer_name: string;
+        role_code: string;
+        role_name: string;
+      };
+      home_screen: string;
+      allowed_screens: string[];
+    }>(`${ROUTE}/Login`, 'POST', {
+      username: p.username,
+      service_number: p.serviceNo,
+      password: p.password,
+    });
+
+    return {
+      token: result.token,
+      user: {
+        id: String(result.officer.officer_id),
+        fullName: result.officer.officer_name,
+        serviceNo: result.officer.service_number,
+        designation: result.officer.role_name,
+        role: result.officer.role_code,
+      },
+      homeScreen: result.home_screen,
+      allowedScreens: result.allowed_screens,
+    };
   },
 };

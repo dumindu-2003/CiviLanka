@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -10,30 +12,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import DeathRegisterForm from "./DeathRegisterForm";
 import AllDeathApplications from "./AllDeathApplications";
-
-type Registration = {
-  id: string;
-  name: string;
-  date: string;
-  status: "Open" | "Approved" | "Rejected";
-};
-
-const registrations: Registration[] = [
-  {
-    id: "D001",
-    name: "Nimal Silva",
-    date: "2026-08-28",
-    status: "Open",
-  },
-  {
-    id: "D002",
-    name: "Kamala Perera",
-    date: "2026-08-25",
-    status: "Approved",
-  },
-];
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { createDeathApplication, loadDeathApplications } from "../../actions/deathAction";
+import type { SignOffCredentials } from "../../types/auth";
+import type { DeathApplicationPayload } from "../../types/death";
 
 export default function DeathTestScreen() {
+  const dispatch = useAppDispatch();
+  const registrations = useAppSelector((state) => state.death.queue);
+  const status = useAppSelector((state) => state.death.status);
   /* =====================================================
      SCREEN STATES
   ====================================================== */
@@ -44,6 +31,29 @@ export default function DeathTestScreen() {
   const [showAllApplications, setShowAllApplications] =
     useState(false);
 
+  useEffect(() => {
+    void dispatch(loadDeathApplications());
+  }, [dispatch]);
+
+  const saveDraft = async (payload: DeathApplicationPayload) => {
+    await dispatch(createDeathApplication({ payload, status: "Draft" })).unwrap();
+    await dispatch(loadDeathApplications()).unwrap();
+    setShowApplication(false);
+    Alert.alert("Draft saved", "The death application has been saved.");
+  };
+
+  const submitApplication = async (
+    payload: DeathApplicationPayload,
+    credentials: SignOffCredentials
+  ) => {
+    await dispatch(
+      createDeathApplication({ payload, status: "Pending", credentials })
+    ).unwrap();
+    await dispatch(loadDeathApplications()).unwrap();
+    setShowApplication(false);
+    Alert.alert("Application submitted", "The death application was submitted for review.");
+  };
+
   /* =====================================================
      NEW DEATH REGISTRATION
   ====================================================== */
@@ -52,6 +62,8 @@ export default function DeathTestScreen() {
     return (
       <DeathRegisterForm
         onBack={() => setShowApplication(false)}
+        onSaveDraft={saveDraft}
+        onSubmit={submitApplication}
       />
     );
   }
@@ -88,6 +100,10 @@ export default function DeathTestScreen() {
     // using its View Application button.
     setShowAllApplications(true);
   };
+
+  const draftCount = registrations.filter((item) => item.status === "Draft").length;
+  const pendingCount = registrations.filter((item) => item.status === "Pending").length;
+  const approvedCount = registrations.filter((item) => item.status === "Approved").length;
 
   return (
     <SafeAreaView
@@ -183,7 +199,7 @@ export default function DeathTestScreen() {
             </View>
 
             <Text className="mt-2 text-[24px] font-bold text-[#171717]">
-              3
+              {draftCount}
             </Text>
 
             <Text className="text-[9px] text-[#555555]">
@@ -211,7 +227,7 @@ export default function DeathTestScreen() {
             </View>
 
             <Text className="mt-2 text-[24px] font-bold text-[#171717]">
-              2
+              {pendingCount}
             </Text>
 
             <Text className="text-[9px] text-[#555555]">
@@ -239,7 +255,7 @@ export default function DeathTestScreen() {
             </View>
 
             <Text className="mt-2 text-[24px] font-bold text-[#171717]">
-              8
+              {approvedCount}
             </Text>
 
             <Text className="text-[9px] text-[#555555]">
@@ -292,7 +308,7 @@ export default function DeathTestScreen() {
           </Text>
 
           <Text className="text-[10px] text-[#555555]">
-            Showing 2 latest
+            Showing {Math.min(registrations.length, 5)} latest
           </Text>
         </View>
 
@@ -300,15 +316,27 @@ export default function DeathTestScreen() {
             REGISTRATION CARDS
         ================================================== */}
 
-        {registrations.map((registration) => (
+        {status === "loading" && registrations.length === 0 ? (
+          <ActivityIndicator className="mt-4" />
+        ) : registrations.slice(0, 5).map((item) => (
           <DeathRegistrationCard
-            key={registration.id}
-            registration={registration}
+            key={item.id}
+            registration={{
+              id: item.id,
+              name: item.deceasedName,
+              date: item.submittedOn,
+              status: item.status,
+            }}
             onView={() =>
-              handleViewApplication(registration.id)
+              handleViewApplication(item.id)
             }
           />
         ))}
+        {status === "failed" && registrations.length === 0 && (
+          <Text className="mt-4 text-center text-[11px] text-[#C62828]">
+            Unable to load death applications.
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -319,7 +347,12 @@ export default function DeathTestScreen() {
 ========================================================= */
 
 type CardProps = {
-  registration: Registration;
+  registration: {
+    id: string;
+    name: string;
+    date: string;
+    status: "Draft" | "Pending" | "Approved" | "Rejected";
+  };
   onView: () => void;
 };
 
@@ -390,7 +423,7 @@ function DeathRegistrationCard({
                   : "text-[#0B2855]"
               }`}
             >
-              {registration.status}
+              {registration.status === "Draft" ? "Open" : registration.status}
             </Text>
           </View>
         </View>

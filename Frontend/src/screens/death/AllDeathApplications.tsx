@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -9,142 +11,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import UpdateDeathApplication from "./UpdateDeathApplication";
-
-export type DeathStatus = "Open" | "Approved" | "Rejected";
-
-export type DeathApplication = {
-  id: string;
-  deceasedName: string;
-  nic: string;
-  dateOfBirth: string;
-  dateOfDeath: string;
-  timeOfDeath: string;
-  placeOfDeath: string;
-  gender: string;
-  maritalStatus: string;
-  occupation: string;
-  deceasedAddress: string;
-
-  informantName: string;
-  informantNic: string;
-  relationship: string;
-  informantContact: string;
-  informantAddress: string;
-
-  causeOfDeath: string;
-
-  status: DeathStatus;
-};
-
-/* =========================================================
-   INITIAL APPLICATION DATA
-========================================================= */
-
-const initialApplications: DeathApplication[] = [
-  {
-    id: "D001",
-    deceasedName: "Hewage Don Karunadasa",
-    nic: "195412803129V",
-    dateOfBirth: "04/12/1954",
-    dateOfDeath: "10/28/2024",
-    timeOfDeath: "06:45 AM",
-    placeOfDeath: "Hospital",
-    gender: "Male",
-    maritalStatus: "Widowed",
-    occupation: "Retired Civil Servant",
-    deceasedAddress:
-      "No. 42/3, Temple Road, Kalutara North",
-
-    informantName: "Kasun Chamara Jayawardena",
-    informantNic: "198224501239",
-    relationship: "Son / Daughter",
-    informantContact: "+94 77 341 9820",
-    informantAddress:
-      "No. 42/3A, Flower Road, Colombo 07",
-
-    causeOfDeath: "Natural causes",
-
-    status: "Open",
-  },
-
-  {
-    id: "D002",
-    deceasedName: "Nimal Silva",
-    nic: "194812345678V",
-    dateOfBirth: "05/18/1948",
-    dateOfDeath: "08/28/2026",
-    timeOfDeath: "09:20 AM",
-    placeOfDeath: "Home",
-    gender: "Male",
-    maritalStatus: "Married",
-    occupation: "Retired Teacher",
-    deceasedAddress:
-      "No. 15, Main Street, Negombo",
-
-    informantName: "Ruwan Silva",
-    informantNic: "197912345678V",
-    relationship: "Son",
-    informantContact: "+94 71 234 5678",
-    informantAddress:
-      "No. 15, Main Street, Negombo",
-
-    causeOfDeath: "Medical condition",
-
-    status: "Open",
-  },
-
-  {
-    id: "D003",
-    deceasedName: "Kamala Perera",
-    nic: "195512345678V",
-    dateOfBirth: "07/11/1955",
-    dateOfDeath: "08/25/2026",
-    timeOfDeath: "02:15 PM",
-    placeOfDeath: "Hospital",
-    gender: "Female",
-    maritalStatus: "Widowed",
-    occupation: "Retired Clerk",
-    deceasedAddress:
-      "No. 22, Lake Road, Colombo",
-
-    informantName: "Saman Perera",
-    informantNic: "198512345678V",
-    relationship: "Son",
-    informantContact: "+94 76 555 1234",
-    informantAddress:
-      "No. 22, Lake Road, Colombo",
-
-    causeOfDeath: "Natural causes",
-
-    status: "Approved",
-  },
-
-  {
-    id: "D004",
-    deceasedName: "Sunil Fernando",
-    nic: "196012345678V",
-    dateOfBirth: "02/08/1960",
-    dateOfDeath: "08/20/2026",
-    timeOfDeath: "11:30 PM",
-    placeOfDeath: "Hospital",
-    gender: "Male",
-    maritalStatus: "Married",
-    occupation: "Business Owner",
-    deceasedAddress:
-      "No. 8, Church Road, Wattala",
-
-    informantName: "Dilshan Fernando",
-    informantNic: "199012345678V",
-    relationship: "Son",
-    informantContact: "+94 77 888 9999",
-    informantAddress:
-      "No. 8, Church Road, Wattala",
-
-    causeOfDeath: "Pending medical verification",
-
-    status: "Rejected",
-  },
-];
+import DeathRegisterForm from "./DeathRegisterForm";
+import {
+  getDeathApplication,
+  loadDeathApplications,
+  updateDeathApplication,
+} from "../../actions/deathAction";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import type { DeathApplication } from "../../types/death";
 
 type Props = {
   onBack: () => void;
@@ -153,50 +27,74 @@ type Props = {
 export default function AllDeathApplications({
   onBack,
 }: Props) {
-  const [applications, setApplications] =
-    useState<DeathApplication[]>(initialApplications);
+  const dispatch = useAppDispatch();
+  const applications = useAppSelector((state) => state.death.queue);
+  const status = useAppSelector((state) => state.death.status);
 
   const [selectedApplication, setSelectedApplication] =
     useState<DeathApplication | null>(null);
+  const [editingApplication, setEditingApplication] = useState(false);
+
+  useEffect(() => {
+    void dispatch(loadDeathApplications());
+  }, [dispatch]);
 
   /* =======================================================
      OPEN APPLICATION
   ======================================================= */
 
-  const handleViewApplication = (
-    application: DeathApplication
-  ) => {
-    setSelectedApplication(application);
+  const handleViewApplication = async (application: DeathApplication) => {
+    try {
+      setSelectedApplication(
+        await dispatch(getDeathApplication(application.id)).unwrap()
+      );
+      setEditingApplication(false);
+    } catch (error) {
+      Alert.alert(
+        "Unable to open application",
+        error instanceof Error ? error.message : "Please try again."
+      );
+    }
   };
 
   /* =======================================================
      UPDATE APPLICATION
   ======================================================= */
 
-  const handleUpdateApplication = (
-    updatedApplication: DeathApplication
-  ) => {
-    setApplications((previousApplications) =>
-      previousApplications.map((application) =>
-        application.id === updatedApplication.id
-          ? updatedApplication
-          : application
-      )
-    );
-
-    setSelectedApplication(null);
-  };
-
   /* =======================================================
      SHOW UPDATE SCREEN
   ======================================================= */
 
   if (selectedApplication) {
+    if (editingApplication) {
+      const { id, status: applicationStatus, submittedOn, ...initialData } = selectedApplication;
+      void submittedOn;
+      const saveChanges = async (payload: typeof initialData) => {
+        await dispatch(updateDeathApplication({
+          id,
+          payload,
+          status: applicationStatus,
+        })).unwrap();
+        await dispatch(loadDeathApplications()).unwrap();
+        setEditingApplication(false);
+        setSelectedApplication(null);
+        Alert.alert("Application updated", "Death application details were saved.");
+      };
+
+      return (
+        <DeathRegisterForm
+          initialData={initialData}
+          onBack={() => setEditingApplication(false)}
+          onUpdate={saveChanges}
+        />
+      );
+    }
+
     return (
       <UpdateDeathApplication
         application={selectedApplication}
         onBack={() => setSelectedApplication(null)}
-        onUpdate={handleUpdateApplication}
+        onEdit={() => setEditingApplication(true)}
       />
     );
   }
@@ -207,9 +105,7 @@ export default function AllDeathApplications({
 
   const total = applications.length;
 
-  const open = applications.filter(
-    (item) => item.status === "Open"
-  ).length;
+  const open = applications.filter((item) => item.status === "Draft").length;
 
   const approved = applications.filter(
     (item) => item.status === "Approved"
@@ -342,7 +238,9 @@ export default function AllDeathApplications({
             APPLICATION CARDS
         ================================================== */}
 
-        {applications.map((application) => (
+        {status === "loading" && applications.length === 0 ? (
+          <ActivityIndicator className="mt-4" />
+        ) : applications.map((application) => (
           <DeathApplicationCard
             key={application.id}
             application={application}
@@ -351,6 +249,11 @@ export default function AllDeathApplications({
             }
           />
         ))}
+        {status === "failed" && applications.length === 0 && (
+          <Text className="text-center text-[12px] text-[#C62828]">
+            Unable to load death applications.
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -416,7 +319,7 @@ function DeathApplicationCard({
             <Text
               className={`text-[9px] font-bold ${statusStyle.text}`}
             >
-              {application.status}
+              {application.status === "Draft" ? "Open" : application.status}
             </Text>
           </View>
         </View>
@@ -438,22 +341,22 @@ function DeathApplicationCard({
         <View className="mt-4">
           <DetailRow
             label="NIC"
-            value={application.nic}
+            value={application.deceasedNic}
           />
 
           <DetailRow
             label="Date of Death"
-            value={application.dateOfDeath}
+            value={application.dateOfDemise}
           />
 
           <DetailRow
             label="Time of Death"
-            value={application.timeOfDeath}
+            value={application.timeOfDemise}
           />
 
           <DetailRow
             label="Place of Death"
-            value={application.placeOfDeath}
+            value={application.placeOfDemise}
           />
 
           <DetailRow

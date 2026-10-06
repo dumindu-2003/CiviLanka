@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -8,9 +9,19 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
+import type { SignOffCredentials } from "../../types/auth";
+import type { DeathApplicationPayload } from "../../types/death";
 
 type Props = {
   onBack?: () => void;
+  initialData?: DeathApplicationPayload;
+  onSaveDraft?: (payload: DeathApplicationPayload) => Promise<void>;
+  onSubmit?: (
+    payload: DeathApplicationPayload,
+    credentials: SignOffCredentials
+  ) => Promise<void>;
+  onUpdate?: (payload: DeathApplicationPayload) => Promise<void>;
 };
 
 type FormData = {
@@ -37,30 +48,34 @@ type FormData = {
   causeOfDeath: string;
 };
 
-export default function DeathRegisterForm({ onBack }: Props) {
+export default function DeathRegisterForm({
+  onBack,
+  initialData,
+  onSaveDraft,
+  onSubmit,
+  onUpdate,
+}: Props) {
   const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [showSignOff, setShowSignOff] = useState(false);
 
-  const [form, setForm] = useState<FormData>({
+  const [form, setForm] = useState<FormData>(initialData ?? {
     certificateType: "Death Certificate (Official Notification)",
-
-    informantName: "Kasun Chamara Jayawardena",
-    nic: "198224501239",
-    relationship: "Son / Daughter",
-    informantContact: "+94 77 341 9820",
-    informantAddress: "No. 42/3A, Flower Road, Colombo 07",
-
-    placeOfDemise: "Hospital",
-    dateOfDemise: "10/28/2024",
-    timeOfDemise: "06:45 AM",
-
-    deceasedNic: "195412803129V",
-    deceasedName: "Hewage Don Karunadasa",
-    gender: "Male",
-    dateOfBirth: "04/12/1954",
-    maritalStatus: "Widowed",
-    occupation: "Retired Civil Servant",
-    deceasedAddress: "No. 42/3, Temple Road, Kalutara North",
-
+    informantName: "",
+    nic: "",
+    relationship: "",
+    informantContact: "",
+    informantAddress: "",
+    placeOfDemise: "",
+    dateOfDemise: "",
+    timeOfDemise: "",
+    deceasedNic: "",
+    deceasedName: "",
+    gender: "",
+    dateOfBirth: "",
+    maritalStatus: "",
+    occupation: "",
+    deceasedAddress: "",
     causeOfDeath: "",
   });
 
@@ -77,8 +92,25 @@ export default function DeathRegisterForm({ onBack }: Props) {
   const handleNext = () => {
     if (step === 1) {
       setStep(2);
+    } else if (initialData && onUpdate) {
+      void handleUpdate();
     } else {
-      console.log("Death Registration Submitted:", form);
+      setShowSignOff(true);
+    }
+  };
+
+  const handleUpdate = async () => {
+    setSaving(true);
+    try {
+      if (!onUpdate) throw new Error("Updating is not available on this screen.");
+      await onUpdate(form);
+    } catch (error) {
+      Alert.alert(
+        "Unable to update application",
+        error instanceof Error ? error.message : "Please try again."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -90,8 +122,36 @@ export default function DeathRegisterForm({ onBack }: Props) {
     }
   };
 
-  const handleSaveDraft = () => {
-    console.log("Death Registration Draft:", form);
+  const handleSaveDraft = async () => {
+    setSaving(true);
+    try {
+      const save = initialData ? onUpdate : onSaveDraft;
+      if (!save) throw new Error("Saving is not available on this screen.");
+      await save(form);
+    } catch (error) {
+      Alert.alert(
+        "Unable to save draft",
+        error instanceof Error ? error.message : "Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConfirmSignOff = async (credentials: SignOffCredentials) => {
+    setSaving(true);
+    try {
+      if (!onSubmit) throw new Error("Submission is not available on this screen.");
+      await onSubmit(form, credentials);
+      setShowSignOff(false);
+    } catch (error) {
+      Alert.alert(
+        "Unable to submit application",
+        error instanceof Error ? error.message : "Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -237,22 +297,24 @@ export default function DeathRegisterForm({ onBack }: Props) {
           {/* Next / Submit */}
           <Pressable
             onPress={handleNext}
+            disabled={saving}
             className="h-[42px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
           >
             <Text className="text-[11px] font-bold text-white">
               {step === 1
                 ? "Next: Deceased Details →"
-                : "Submit Death Registration"}
+                : initialData ? "Save Death Application Changes" : "Submit Death Registration"}
             </Text>
           </Pressable>
 
           {/* Save Draft */}
           <Pressable
             onPress={handleSaveDraft}
+            disabled={saving}
             className="mt-2 h-[42px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
           >
             <Text className="text-[11px] font-bold text-white">
-              ▣ Save as Draft
+              {initialData ? "Save Changes" : "▣ Save as Draft"}
             </Text>
           </Pressable>
 
@@ -260,6 +322,7 @@ export default function DeathRegisterForm({ onBack }: Props) {
           {step === 2 && (
             <Pressable
               onPress={handleBack}
+              disabled={saving}
               className="mt-2 h-[42px] items-center justify-center rounded-lg border border-[#0B2855] bg-white"
             >
               <Text className="text-[11px] font-bold text-[#0B2855]">
@@ -269,6 +332,12 @@ export default function DeathRegisterForm({ onBack }: Props) {
           )}
         </View>
       </ScrollView>
+      <AuthorizeSignOffModal
+        visible={showSignOff && !initialData}
+        title="Authorize death registration"
+        onCancel={() => setShowSignOff(false)}
+        onConfirm={(credentials) => void handleConfirmSignOff(credentials)}
+      />
     </SafeAreaView>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Pressable,
   ScrollView,
@@ -7,23 +7,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-type RegistrationStatus = "Open" | "Approved" | "Rejected";
-
-export type Registration = {
-  id: string;
-  babyName: string;
-  fatherName: string;
-  motherName: string;
-  birthDate: string;
-  birthPlace: string;
-  status: RegistrationStatus;
-};
+import type { BirthApplication, BirthStatus } from "../../types/birth";
 
 type UpdateBirthApplicationProps = {
-  registration: Registration;
+  registration: BirthApplication;
   onBack: () => void;
-  onUpdate: (updatedApplication: Registration) => void;
+  onEdit: () => void;
 };
 
 type SectionCardProps = {
@@ -39,30 +28,9 @@ type InfoRowProps = {
 export default function UpdateBirthApplication({
   registration,
   onBack,
-  onUpdate,
+  onEdit,
 }: UpdateBirthApplicationProps) {
-  const [status, setStatus] = useState<RegistrationStatus>(
-    registration.status || "Open"
-  );
-
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  const statuses: RegistrationStatus[] = [
-    "Open",
-    "Approved",
-    "Rejected",
-  ];
-
-  const handleUpdate = () => {
-    const updatedApplication: Registration = {
-      ...registration,
-      status: status,
-    };
-
-    onUpdate(updatedApplication);
-  };
-
-  const getStatusTextColor = (value: RegistrationStatus) => {
+  const getStatusTextColor = (value: BirthStatus) => {
     if (value === "Approved") {
       return "text-[#16804B]";
     }
@@ -125,7 +93,7 @@ export default function UpdateBirthApplication({
           </Text>
 
           <Text className="mt-1 text-[11px] text-[#737B87]">
-            Review the registration details and update the application status.
+            Review the registration details and edit the application information.
           </Text>
         </View>
 
@@ -165,89 +133,28 @@ export default function UpdateBirthApplication({
           />
         </SectionCard>
 
+        <Pressable
+          onPress={onEdit}
+          className="mb-4 items-center rounded-xl border border-[#0B2855] bg-white py-4"
+        >
+          <Text className="text-[14px] font-bold text-[#0B2855]">
+            Edit Application Details
+          </Text>
+        </Pressable>
+
         {/* STATUS */}
         <SectionCard title="Application Status">
           <Text className="mb-2 text-[11px] font-semibold text-[#555]">
             Registration Status
           </Text>
-
-          {/* DROPDOWN BUTTON */}
-          <Pressable
-            onPress={() => setShowDropdown(!showDropdown)}
-            className="flex-row items-center justify-between rounded-xl border border-[#D7DCE3] bg-white px-4 py-3"
-          >
-            <Text
-              className={`text-[14px] font-bold ${getStatusTextColor(
-                status
-              )}`}
-            >
-              {status}
-            </Text>
-
-            <Text className="text-[18px] font-bold text-[#0B2855]">
-              {showDropdown ? "⌃" : "⌄"}
-            </Text>
-          </Pressable>
-
-          {/* DROPDOWN OPTIONS */}
-          {showDropdown && (
-            <View className="mt-2 overflow-hidden rounded-xl border border-[#D7DCE3] bg-white">
-              {statuses.map((item) => {
-                const selected = status === item;
-
-                return (
-                  <Pressable
-                    key={item}
-                    onPress={() => {
-                      setStatus(item);
-                      setShowDropdown(false);
-                    }}
-                    className="flex-row items-center justify-between border-b border-[#EEF0F3] px-4 py-3"
-                  >
-                    <Text
-                      className={`text-[13px] font-semibold ${getStatusTextColor(
-                        item
-                      )}`}
-                    >
-                      {item}
-                    </Text>
-
-                    {selected && (
-                      <Text className="text-[16px] font-bold text-[#0B2855]">
-                        ✓
-                      </Text>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-        </SectionCard>
-
-        {/* CURRENT STATUS */}
-        <View className="mb-4 rounded-xl border border-[#DCE3ED] bg-[#EEF4FB] p-4">
-          <Text className="text-[10px] font-medium text-[#687386]">
-            CURRENT SELECTED STATUS
-          </Text>
-
           <Text
-            className={`mt-1 text-[18px] font-bold ${getStatusTextColor(
-              status
+            className={`text-[14px] font-bold ${getStatusTextColor(
+              registration.status
             )}`}
           >
-            {status}
+            {registration.status === "Draft" ? "Open" : registration.status}
           </Text>
-        </View>
-
-        {/* UPDATE BUTTON */}
-        <Pressable
-          onPress={handleUpdate}
-          className="mb-3 items-center rounded-xl bg-[#0B2855] py-4"
-        >
-          <Text className="text-[14px] font-bold text-white">
-            Update Birth Application
-          </Text>
-        </Pressable>
+        </SectionCard>
 
         {/* BACK BUTTON */}
         <Pressable

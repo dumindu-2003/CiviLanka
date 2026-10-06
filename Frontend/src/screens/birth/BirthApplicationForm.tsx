@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -8,7 +9,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
+import type { SignOffCredentials } from "../../types/auth";
+import type { BirthApplicationPayload } from "../../types/birth";
 
 type FormData = {
   applicantName: string;
@@ -39,49 +42,47 @@ type FormData = {
 
 type ApplicationFormProps = {
   onBack: () => void;
+  initialData?: BirthApplicationPayload;
+  onSaveDraft?: (payload: BirthApplicationPayload) => Promise<void>;
+  onSubmit?: (
+    payload: BirthApplicationPayload,
+    credentials: SignOffCredentials
+  ) => Promise<void>;
+  onUpdate?: (payload: BirthApplicationPayload) => Promise<void>;
 };
 
 export default function BirthApplicationForm({
   onBack,
+  initialData,
+  onSaveDraft,
+  onSubmit,
+  onUpdate,
 }: ApplicationFormProps) {
   const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [showSignOff, setShowSignOff] = useState(false);
 
-  const [form, setForm] = useState<FormData>({
-    applicantName:
-      "Kavinda Ravishan Jayasuriya",
-    applicantNic: "199248201912",
-    applicantDob: "06/14/1992",
-    applicantAddress:
-      "No. 42/B, Lotus Grove Terrace, Baseline Road, Colombo 09",
-
-    babyName:
-      "Thisal Methuja Jayasuriya",
-    birthDate: "03/18/2024",
-    birthTime: "08:42 AM",
-    birthPlace:
-      "Castle Street Hospital for Women, Colombo",
+  const [form, setForm] = useState<FormData>(initialData ?? {
+    applicantName: "",
+    applicantNic: "",
+    applicantDob: "",
+    applicantAddress: "",
+    babyName: "",
+    birthDate: "",
+    birthTime: "",
+    birthPlace: "",
     gender: "Male",
-    birthWeight: "3.25",
-
-    fatherName:
-      "Kavinda Ravishan Jayasuriya",
-    fatherNic: "198412801824",
-    fatherOccupation:
-      "Senior Systems Engineer",
-    fatherAddress:
-      "No. 18/B, Circular Road, Nawala",
-
-    motherName:
-      "Thilini Menaka Senanayake",
-    motherNic: "199626802798",
-    motherOccupation:
-      "Chartered Accountant",
-    motherAddress:
-      "No. 18/B, Circular Road, Nawala",
-
-    medicalOfficer:
-      "Dr. Anoma Jayasinghe, Obstetrician",
-    registrationDate: "10/25/2024",
+    birthWeight: "",
+    fatherName: "",
+    fatherNic: "",
+    fatherOccupation: "",
+    fatherAddress: "",
+    motherName: "",
+    motherNic: "",
+    motherOccupation: "",
+    motherAddress: "",
+    medicalOfficer: "",
+    registrationDate: "",
   });
 
   const updateField = <K extends keyof FormData>(
@@ -108,19 +109,54 @@ export default function BirthApplicationForm({
     }
   };
 
-  const handleSaveDraft = () => {
-    console.log(
-      "Birth registration draft:",
-      form
-    );
+  const handleSaveDraft = async () => {
+    setSaving(true);
+    try {
+      const save = initialData ? onUpdate : onSaveDraft;
+      if (!save) throw new Error("Saving is not available on this screen.");
+      await save(form);
+    } catch (error) {
+      Alert.alert(
+        "Unable to save draft",
+        error instanceof Error ? error.message : "Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSubmit = () => {
-    console.log(
-      "Birth registration submitted:",
-      form
-    );
-    // Connect your API here later.
+  const handleSubmit = async () => {
+    if (initialData && onUpdate) {
+      setSaving(true);
+      try {
+        await onUpdate(form);
+      } catch (error) {
+        Alert.alert(
+          "Unable to update application",
+          error instanceof Error ? error.message : "Please try again."
+        );
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+    setShowSignOff(true);
+  };
+
+  const handleConfirmSignOff = async (credentials: SignOffCredentials) => {
+    setSaving(true);
+    try {
+      if (!onSubmit) throw new Error("Submission is not available on this screen.");
+      await onSubmit(form, credentials);
+      setShowSignOff(false);
+    } catch (error) {
+      Alert.alert(
+        "Unable to submit application",
+        error instanceof Error ? error.message : "Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -241,6 +277,7 @@ export default function BirthApplicationForm({
           <>
             <Pressable
               onPress={handleNext}
+              disabled={saving}
               className="h-[42px] items-center justify-center rounded-md bg-[#0B2855] active:opacity-80"
             >
               <Text className="text-[11px] font-semibold text-white">
@@ -253,6 +290,7 @@ export default function BirthApplicationForm({
             <View className="mt-1 flex-row">
               <Pressable
                 onPress={handleBack}
+                disabled={saving}
                 className="mr-1 h-[38px] flex-1 items-center justify-center rounded-md border border-[#0B2855] bg-white"
               >
                 <Text className="text-[10px] font-medium text-[#0B2855]">
@@ -262,10 +300,11 @@ export default function BirthApplicationForm({
 
               <Pressable
                 onPress={handleSaveDraft}
+                disabled={saving}
                 className="ml-1 h-[38px] flex-1 items-center justify-center rounded-md bg-[#0B2855]"
               >
                 <Text className="text-[10px] font-medium text-white">
-                  ▣ Save as Draft
+                  {initialData ? "Save Changes" : "▣ Save as Draft"}
                 </Text>
               </Pressable>
             </View>
@@ -274,15 +313,17 @@ export default function BirthApplicationForm({
           <>
             <Pressable
               onPress={handleSubmit}
+              disabled={saving}
               className="h-[42px] items-center justify-center rounded-md bg-[#0B2855]"
             >
               <Text className="text-[11px] font-semibold text-white">
-                Submit Birth Registration
+                {initialData ? "Save Birth Application Changes" : "Submit Birth Registration"}
               </Text>
             </Pressable>
 
             <Pressable
               onPress={handleBack}
+              disabled={saving}
               className="mt-1 h-[38px] items-center justify-center rounded-md border border-[#0B2855]"
             >
               <Text className="text-[10px] font-medium text-[#0B2855]">
@@ -292,6 +333,12 @@ export default function BirthApplicationForm({
           </>
         )}
       </View>
+      <AuthorizeSignOffModal
+        visible={showSignOff}
+        title="Authorize birth registration"
+        onCancel={() => setShowSignOff(false)}
+        onConfirm={(credentials) => void handleConfirmSignOff(credentials)}
+      />
     </SafeAreaView>
   );
 }

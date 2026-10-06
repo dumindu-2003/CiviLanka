@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -9,35 +11,43 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AllBirthAplications from "./AllBirthApplications";
 import ApplicationForm from "./BirthApplicationForm";
-
-type Registration = {
-  id: string;
-  babyName: string;
-  date: string;
-  status: "Pending" | "Approved";
-};
-
-const registrations: Registration[] = [
-  {
-    id: "B001",
-    babyName: "Baby Perera",
-    date: "2026-09-01",
-    status: "Pending",
-  },
-  {
-    id: "B002",
-    babyName: "Baby Silva",
-    date: "2026-08-28",
-    status: "Approved",
-  },
-];
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { createBirthApplication, loadBirthApplications } from "../../actions/birthAction";
+import type { SignOffCredentials } from "../../types/auth";
+import type { BirthApplicationPayload } from "../../types/birth";
 
 export default function BirthTestScreen() {
+  const dispatch = useAppDispatch();
+  const registrations = useAppSelector((state) => state.birth.queue);
+  const status = useAppSelector((state) => state.birth.status);
   const [showApplication, setShowApplication] =
   useState(false);
 
   const [showAllApplications, setShowAllApplications] =
   useState(false);
+
+  useEffect(() => {
+    void dispatch(loadBirthApplications());
+  }, [dispatch]);
+
+  const saveDraft = async (payload: BirthApplicationPayload) => {
+    await dispatch(createBirthApplication({ payload, status: "Draft" })).unwrap();
+    await dispatch(loadBirthApplications()).unwrap();
+    setShowApplication(false);
+    Alert.alert("Draft saved", "The birth application has been saved.");
+  };
+
+  const submitApplication = async (
+    payload: BirthApplicationPayload,
+    credentials: SignOffCredentials
+  ) => {
+    await dispatch(
+      createBirthApplication({ payload, status: "Pending", credentials })
+    ).unwrap();
+    await dispatch(loadBirthApplications()).unwrap();
+    setShowApplication(false);
+    Alert.alert("Application submitted", "The birth application was submitted for review.");
+  };
 
   /* =====================================================
      SHOW APPLICATION FORM
@@ -47,6 +57,8 @@ export default function BirthTestScreen() {
     return (
         <ApplicationForm
         onBack={() => setShowApplication(false)}
+        onSaveDraft={saveDraft}
+        onSubmit={submitApplication}
         />
     );
   }
@@ -73,8 +85,13 @@ export default function BirthTestScreen() {
   };
 
   const handleViewApplication = (id: string) => {
+    setShowAllApplications(true);
     console.log("View application:", id);
   };
+
+  const draftCount = registrations.filter((item) => item.status === "Draft").length;
+  const pendingCount = registrations.filter((item) => item.status === "Pending").length;
+  const approvedCount = registrations.filter((item) => item.status === "Approved").length;
 
   return (
     <SafeAreaView
@@ -150,7 +167,7 @@ export default function BirthTestScreen() {
           <StatCard
             icon="▣"
             label="NEW"
-            number="5"
+            number={String(draftCount)}
             description="New Entries"
             iconColor="#243C70"
           />
@@ -158,7 +175,7 @@ export default function BirthTestScreen() {
           <StatCard
             icon="⌛"
             label="WAIT"
-            number="3"
+            number={String(pendingCount)}
             description="Pending"
             iconColor="#243C70"
           />
@@ -166,7 +183,7 @@ export default function BirthTestScreen() {
           <StatCard
             icon="✓"
             label="DONE"
-            number="12"
+            number={String(approvedCount)}
             description="Approved"
             iconColor="#243C70"
           />
@@ -218,20 +235,32 @@ export default function BirthTestScreen() {
           </Text>
 
           <Text className="text-[10px] text-[#777777]">
-            Showing 2 latest
+            Showing {Math.min(registrations.length, 5)} latest
           </Text>
         </View>
 
         <View className="px-3">
-          {registrations.map((registration) => (
+          {status === "loading" && registrations.length === 0 ? (
+            <ActivityIndicator className="mt-4" />
+          ) : registrations.slice(0, 5).map((registration) => (
             <RegistrationCard
               key={registration.id}
-              registration={registration}
+              registration={{
+                id: registration.id,
+                babyName: registration.babyName,
+                date: registration.submittedOn,
+                status: registration.status,
+              }}
               onPress={() =>
                 handleViewApplication(registration.id)
               }
             />
           ))}
+          {status === "failed" && registrations.length === 0 && (
+            <Text className="mt-4 text-center text-[11px] text-[#C62828]">
+              Unable to load birth applications.
+            </Text>
+          )}
         </View>
       </ScrollView>
 
@@ -319,7 +348,12 @@ function StatCard({
 ========================================================= */
 
 type RegistrationCardProps = {
-  registration: Registration;
+  registration: {
+    id: string;
+    babyName: string;
+    date: string;
+    status: "Draft" | "Pending" | "Approved" | "Rejected";
+  };
   onPress: () => void;
 };
 
@@ -327,8 +361,8 @@ function RegistrationCard({
   registration,
   onPress,
 }: RegistrationCardProps) {
-  const isPending =
-    registration.status === "Pending";
+  const isPending = registration.status === "Pending";
+  const statusLabel = registration.status === "Draft" ? "Open" : registration.status;
 
   return (
     <View className="mt-3 rounded-lg border border-[#E2E5E9] bg-white px-3 py-3 shadow-sm">
@@ -353,7 +387,7 @@ function RegistrationCard({
           }`}
         >
           <Text className="text-[9px] font-semibold text-white">
-            {registration.status}
+            {statusLabel}
           </Text>
         </View>
       </View>
