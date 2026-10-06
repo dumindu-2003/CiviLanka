@@ -31,7 +31,7 @@ const toError = (e: any): Error => {
   const detail = typeof d?.detail === 'string' ? d.detail : undefined; // FastAPI 401 -> { detail }
   if (!e?.response && ['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(e?.code)) {
     return new Error(
-      `Cannot reach the CiviLanka API at ${API_BASE_URL}. Start the backend on 0.0.0.0:8000 and ensure your phone and PC are on the same Wi-Fi.`,
+      `Cannot reach the CiviLanka API at ${API_BASE_URL}. Confirm the backend is running on port 8000. For an Android phone connected to this PC by USB, run "adb reverse tcp:8000 tcp:8000" and set EXPO_PUBLIC_API_URL=http://127.0.0.1:8000; otherwise use a network-reachable PC address.`,
     );
   }
   return new Error(d?.Result ?? detail ?? e?.message ?? 'Network error');
