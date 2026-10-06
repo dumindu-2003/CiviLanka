@@ -23,8 +23,16 @@ Flow of every call (unchanged): Controller -> Interface -> DataAccess (sets `Act
 ```
 pip install -r requirements.txt          # + "ODBC Driver 17 for SQL Server" installed on the machine
 copy .env.example .env                   # edit DB_SERVER / DB_USER / DB_PASSWORD / JWT_SECRET
-uvicorn main:app --reload                # Swagger UI: http://127.0.0.1:8000/docs
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+For a phone to reach the API, keep the backend running on the PC, connect the phone
+and PC to the same Wi-Fi, and set `EXPO_PUBLIC_API_URL` in `Frontend/.env` to
+`http://<PC-LAN-IP>:8000` (find the PC's Wi-Fi IPv4 address with `ipconfig`).
+Restart Expo after changing the URL. Open `http://<PC-LAN-IP>:8000/docs` on the
+phone to verify connectivity; if it cannot connect, allow inbound TCP port 8000
+through Windows Firewall. `0.0.0.0` is the backend bind address, not the address
+to put in the app.
 
 ## Notes
 - **Action types are numbers** - see `ACTION_TYPES.md` / `Static/ActionTypes.py`. The SQL procedures must be changed to compare these numbers (no SQL is generated here).

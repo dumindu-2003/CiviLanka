@@ -5,7 +5,7 @@ import type { SignOffCredentials } from '../types/auth';
 
 export { API_BASE_URL }; // profileService uses it for the photo URL
 
-const http = axios.create({ baseURL: API_BASE_URL, timeout: 15000 });
+const http = axios.create({ baseURL: API_BASE_URL, timeout: 10000 });
 
 // every request carries the JWT (saved by tokenStorage after login)
 http.interceptors.request.use(async (config) => {
@@ -29,6 +29,11 @@ const unwrap = <T>(body: ApiResponse<T>): T => {
 const toError = (e: any): Error => {
   const d = e?.response?.data;
   const detail = typeof d?.detail === 'string' ? d.detail : undefined; // FastAPI 401 -> { detail }
+  if (!e?.response && ['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(e?.code)) {
+    return new Error(
+      `Cannot reach the CiviLanka API at ${API_BASE_URL}. Start the backend on 0.0.0.0:8000 and ensure your phone and PC are on the same Wi-Fi.`,
+    );
+  }
   return new Error(d?.Result ?? detail ?? e?.message ?? 'Network error');
 };
 
