@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { tokenStorage } from './tokenStorage';
 
-const http = axios.create({
+export const http = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:5000', // Android emulator -> PC
   timeout: 15000,
 });
