@@ -1,63 +1,69 @@
-import { requestApi } from './apiClient';
+import { apiClient } from './apiClient';
 import { DEMO_MODE } from '../config';
+import { DEMO_LOGIN, wait } from './demoData';
 import type { LoginPayload, LoginResult } from '../types/auth';
 
-const ROUTE = 'auth';
+// Used by: LoginScreen (via actions/authAction.ts)
 
-const DEMO_RESULT: LoginResult = {
-  token: 'demo-token',
-  user: {
-    id: '1',
-    fullName: 'Saman Perera',
-    serviceNo: 'DR-001',
-    designation: 'District Registrar',
-    role: 'DISTRICT_REGISTRAR',
-    nic: '199012345678',
-    dateOfBirth: '1990-05-15',
-    gender: 'Male',
-    email: 'saman.perera@gov.lk',
-    phone: '+94 77 123 4567',
-    address: 'No. 45, Main Street, Colombo',
-    employeeId: 'EMP-2024-001',
-    department: 'Divisional Secretariat',
-    officeLocation: 'Kaduwela',
-  },
-  homeScreen: 'DistrictDashboard',
-  allowedScreens: ['Reports', 'NicPendingList', 'NicApplicationReview', 'AddProfile'],
+// ── SIGN IN ────────────────────────────────────────────────────────────────
+// POST /api/auth/Login
+// body     : { username, service_number, password }
+// returns  : { token, officer{...}, home_screen, allowed_screens[], permissions[] }
+// Mapped to the LoginResult shape the Redux auth slice already uses.
+interface LoginResponse {
+  token: string;
+  officer: {
+    officer_id: number;
+    username: string;
+    service_number: string;
+    officer_name: string | null;
+    unit_name: string | null;
+    role_code: string;
+    role_name: string;
+    must_change_password: boolean;
+  };
+  home_screen: string;
+  allowed_screens: string[];
+  permissions: string[];
+}
+
+export const loginOfficer = async (p: LoginPayload): Promise<LoginResult> => {
+  if (DEMO_MODE) {
+    await wait();
+    return DEMO_LOGIN;
+  }
+  const r = await apiClient.post<LoginResponse>('/api/auth/Login', {
+    username: p.username,
+    service_number: p.serviceNo,
+    password: p.password,
+  });
+  return {
+    token: r.token,
+    user: {
+      id: String(r.officer.officer_id),
+      fullName: r.officer.officer_name ?? r.officer.username,
+      serviceNo: r.officer.service_number,
+      designation: r.officer.role_name,
+      role: r.officer.role_code,
+      officeLocation: r.officer.unit_name ?? undefined,
+    },
+    homeScreen: r.home_screen,
+    allowedScreens: r.allowed_screens,
+  };
 };
 
-export const authService = {
-  login: async (p: LoginPayload): Promise<LoginResult> => {
-    if (DEMO_MODE) return DEMO_RESULT;
-    const result = await requestApi<{
-      token: string;
-      officer: {
-        officer_id: number;
-        username: string;
-        service_number: string;
-        officer_name: string;
-        role_code: string;
-        role_name: string;
-      };
-      home_screen: string;
-      allowed_screens: string[];
-    }>(`${ROUTE}/Login`, 'POST', {
-      username: p.username,
-      service_number: p.serviceNo,
-      password: p.password,
-    });
+// ── REFRESH SCREENS / PERMISSIONS ──────────────────────────────────────────
+// GET /api/auth/Access        (needs token)
+export const getAccess = () =>
+  apiClient.get<{ role_code: string; home_screen: string; allowed_screens: string[]; permissions: string[] }>(
+    '/api/auth/Access',
+  );
 
-    return {
-      token: result.token,
-      user: {
-        id: String(result.officer.officer_id),
-        fullName: result.officer.officer_name,
-        serviceNo: result.officer.service_number,
-        designation: result.officer.role_name,
-        role: result.officer.role_code,
-      },
-      homeScreen: result.home_screen,
-      allowedScreens: result.allowed_screens,
-    };
-  },
-};
+// ── CHANGE PASSWORD ────────────────────────────────────────────────────────
+// POST /api/auth/ChangePassword   (MyProfileScreen -> "Change Password")
+// new password: min 8 characters
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  apiClient.post<unknown>('/api/auth/ChangePassword', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
