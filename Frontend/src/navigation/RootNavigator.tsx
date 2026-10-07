@@ -23,10 +23,12 @@ export default function RootNavigator() {
   }
 
   // Only screens allowed by the backend are registered
+  const screens = [...new Set([...allowedScreens, 'MarriageRegistrationStep1', 'MarriageRegistrationStep2'])];
+
   return (
     <Stack.Navigator>
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-      {allowedScreens
+      {screens
         .filter((key) => stackScreens[key])
         .map((key) => (
           <Stack.Screen
