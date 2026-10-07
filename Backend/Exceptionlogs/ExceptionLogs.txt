@@ -13,3 +13,4 @@
 10/07/2026 22:03:45 ~ ReportGenerate ~ The INSERT statement conflicted with the FOREIGN KEY constraint "FK__reports__generat__1EA48E88". The conflict occurred in database "civil_registration_db", table "dbo.district_registrar", column 'district_registrar_id'.;
 10/07/2026 22:03:54 ~ ReportGenerate ~ The INSERT statement conflicted with the FOREIGN KEY constraint "FK__reports__generat__1EA48E88". The conflict occurred in database "civil_registration_db", table "dbo.district_registrar", column 'district_registrar_id'.;
 >>>>>>> 74380a1f1690c3b61a3d5836430bed390a595505
+10/08/2026 01:56:47 ~ FindPerson ~ Unknown action_type for sp_district.;

@@ -1,80 +1,71 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  useFocusEffect,
-  useNavigation,
-} from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-import { colors } from '../../theme/colors';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { decideApplication, loadDashboard } from '../../actions/districtAction';
+import { AuthorizeSignOffModal } from '../../components/AuthorizeSignOffModal';
+import type { Status } from '../../components/StatusBadge';
 import type { RootStackParamList } from '../../navigation/types';
-import { getDistrictSummary } from '../../services/districtService';
-
-type NavigationProp =
-  NativeStackNavigationProp<RootStackParamList>;
+import type { SignOffCredentials } from '../../types/auth';
+import type { ApplicationItem, Category, Decision } from '../../types/district';
+import { colors } from '../../theme/colors';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-type ActionItem = {
+const CATEGORIES: Category[] = ['All', 'Birth', 'Death', 'Marriage'];
+
+const STATUS_TONE: Record<Status, string> = {
+  Pending: colors.muted,
+  Approved: colors.green,
+  Rejected: colors.red,
+};
+
+// Bottom action buttons. `route` = stack screen, `tab` = bottom tab. No target = "not available yet".
+const ACTIONS: {
   label: string;
   icon: IconName;
   route?: keyof RootStackParamList;
   tab?: string;
-};
-
-type SummaryData = {
-  total?: number;
-  birth?: number;
-  death?: number;
-  marriage?: number;
-  nic?: number;
-  pending?: number;
-  approved?: number;
-  rejected?: number;
-};
-
-const ACTIONS: ActionItem[] = [
+}[] = [
   {
     label: 'View All Records',
     icon: 'grid-outline',
     route: 'AllRecords',
   },
+
   {
     label: 'Generate Report',
     icon: 'document-text-outline',
     route: 'Reports',
   },
+
   {
     label: 'Audit Trail',
     icon: 'time-outline',
     route: 'AuditTrail',
   },
+
   {
     label: 'Add Profile',
     icon: 'person-add-outline',
     route: 'AddProfile',
   },
+
   {
     label: 'Find People',
     icon: 'search-outline',
     route: 'FindPeople',
   },
+
   {
     label: 'View Profile',
     icon: 'person-circle-outline',
     tab: 'Profile',
   },
+
   {
     label: 'NIC Request',
     icon: 'id-card-outline',
@@ -82,783 +73,374 @@ const ACTIONS: ActionItem[] = [
   },
 ];
 
-export default function DistrictDashboardScreen() {
-  const navigation = useNavigation<NavigationProp>();
-
-  const [summary, setSummary] = useState<SummaryData>({});
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const loadDashboard = useCallback(async () => {
-    try {
-      const result = await getDistrictSummary();
-
-      if (result) {
-        setSummary(result);
-      }
-    } catch (error) {
-      console.error(
-        'District dashboard loading error:',
-        error,
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      void loadDashboard();
-    }, [loadDashboard]),
-  );
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    void loadDashboard();
-  }, [loadDashboard]);
-
-  const totalRecords = useMemo(() => {
-    if (typeof summary.total === 'number') {
-      return summary.total;
-    }
-
-    return (
-      (summary.birth ?? 0) +
-      (summary.death ?? 0) +
-      (summary.marriage ?? 0) +
-      (summary.nic ?? 0)
-    );
-  }, [summary]);
-
-  const runAction = useCallback(
-    (action: ActionItem) => {
-      if (action.route) {
-        navigation.navigate(action.route as any);
-        return;
-      }
-
-      if (action.tab) {
-        /*
-         * If your parent navigator has a Profile tab,
-         * this attempts to navigate to it.
-         */
-        try {
-          navigation.navigate(
-            'MainTabs' as any,
-            {
-              screen: action.tab,
-            } as any,
-          );
-        } catch (error) {
-          console.error(
-            'Unable to navigate to tab:',
-            error,
-          );
-
-          Alert.alert(
-            'Navigation',
-            `${action.label} is not available from this screen.`,
-          );
-        }
-
-        return;
-      }
-
-      Alert.alert(
-        action.label,
-        'This feature is not available yet.',
-      );
-    },
-    [navigation],
-  );
-
+function StatCard({ label, value, note, icon }: { label: string; value: number | string; note: string; icon: IconName }) {
   return (
-    <SafeAreaView
-      style={styles.root}
-      edges={['top', 'bottom']}
-    >
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoCircle}>
-            <Ionicons
-              name="business-outline"
-              size={22}
-              color={colors.navy}
-            />
-          </View>
-
-          <View>
-            <Text style={styles.headerTitle}>
-              District Dashboard
-            </Text>
-
-            <Text style={styles.headerSubtitle}>
-              Civil Registration System
-            </Text>
-          </View>
-        </View>
-
-        <Pressable
-          style={styles.notificationButton}
-          onPress={() => {
-            Alert.alert(
-              'Notifications',
-              'No new notifications.',
-            );
-          }}
-        >
-          <Ionicons
-            name="notifications-outline"
-            size={21}
-            color={colors.white}
-          />
-        </Pressable>
+    <View style={styles.statCard}>
+      <View style={styles.statTop}>
+        <Text style={styles.statLabel}>{label}</Text>
+        <Ionicons name={icon} size={16} color={colors.navy} />
       </View>
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.navy}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* =====================================================
-            WELCOME
-        ====================================================== */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>
-            District Overview
-          </Text>
-
-          <Text style={styles.welcomeText}>
-            Manage civil registration records and district
-            activities.
-          </Text>
-        </View>
-
-        {/* =====================================================
-            SUMMARY CARD
-        ====================================================== */}
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryHeader}>
-            <View>
-              <Text style={styles.summaryTitle}>
-                Total Records
-              </Text>
-
-              <Text style={styles.summaryDescription}>
-                Current district records
-              </Text>
-            </View>
-
-            <View style={styles.summaryIcon}>
-              <Ionicons
-                name="documents-outline"
-                size={22}
-                color={colors.navy}
-              />
-            </View>
-          </View>
-
-          {loading ? (
-            <ActivityIndicator
-              style={styles.summaryLoader}
-              color={colors.navy}
-            />
-          ) : (
-            <Text style={styles.totalNumber}>
-              {totalRecords}
-            </Text>
-          )}
-
-          <View style={styles.divider} />
-
-          <View style={styles.summaryStats}>
-            <SummaryItem
-              label="Birth"
-              value={summary.birth ?? 0}
-              icon="happy-outline"
-            />
-
-            <SummaryItem
-              label="Death"
-              value={summary.death ?? 0}
-              icon="heart-outline"
-            />
-
-            <SummaryItem
-              label="Marriage"
-              value={summary.marriage ?? 0}
-              icon="people-outline"
-            />
-
-            <SummaryItem
-              label="NIC"
-              value={summary.nic ?? 0}
-              icon="card-outline"
-            />
-          </View>
-        </View>
-
-        {/* =====================================================
-            STATUS
-        ====================================================== */}
-        <Text style={styles.sectionTitle}>
-          Application Status
-        </Text>
-
-        <View style={styles.statusRow}>
-          <StatusCard
-            label="Pending"
-            value={summary.pending ?? 0}
-            icon="time-outline"
-          />
-
-          <StatusCard
-            label="Approved"
-            value={summary.approved ?? 0}
-            icon="checkmark-circle-outline"
-          />
-
-          <StatusCard
-            label="Rejected"
-            value={summary.rejected ?? 0}
-            icon="close-circle-outline"
-          />
-        </View>
-
-        {/* =====================================================
-            QUICK ACTIONS
-        ====================================================== */}
-        <View style={styles.actionsHeader}>
-          <Text style={styles.sectionTitle}>
-            Quick Actions
-          </Text>
-
-          <Text style={styles.actionCount}>
-            {ACTIONS.length} actions
-          </Text>
-        </View>
-
-        <View style={styles.actionsGrid}>
-          {ACTIONS.map((action) => (
-            <Pressable
-              key={action.label}
-              style={({ pressed }) => [
-                styles.actionCard,
-                pressed && styles.actionCardPressed,
-              ]}
-              onPress={() => runAction(action)}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons
-                  name={action.icon}
-                  size={23}
-                  color={colors.navy}
-                />
-              </View>
-
-              <Text style={styles.actionLabel}>
-                {action.label}
-              </Text>
-
-              <Ionicons
-                name="chevron-forward"
-                size={15}
-                color={colors.muted}
-              />
-            </Pressable>
-          ))}
-        </View>
-
-        {/* =====================================================
-            RECENT ACTIVITY
-        ====================================================== */}
-        <View style={styles.recentHeader}>
-          <Text style={styles.sectionTitle}>
-            Recent Activity
-          </Text>
-
-          <Pressable
-            onPress={() =>
-              navigation.navigate('AuditTrail')
-            }
-          >
-            <Text style={styles.viewAllText}>
-              View All
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.activityCard}>
-          <ActivityRow
-            icon="document-text-outline"
-            title="District records"
-            subtitle="View and manage all records"
-            onPress={() =>
-              navigation.navigate('AllRecords')
-            }
-          />
-
-          <View style={styles.activityDivider} />
-
-          <ActivityRow
-            icon="time-outline"
-            title="Audit trail"
-            subtitle="Review recent system activity"
-            onPress={() =>
-              navigation.navigate('AuditTrail')
-            }
-          />
-
-          <View style={styles.activityDivider} />
-
-          <ActivityRow
-            icon="bar-chart-outline"
-            title="Reports"
-            subtitle="Generate district reports"
-            onPress={() =>
-              navigation.navigate('Reports')
-            }
-          />
-        </View>
-
-        <View style={styles.bottomSpace} />
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-/* ============================================================
-   SUMMARY ITEM
-============================================================ */
-
-function SummaryItem({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: number;
-  icon: IconName;
-}) {
-  return (
-    <View style={styles.summaryItem}>
-      <Ionicons
-        name={icon}
-        size={15}
-        color={colors.navy}
-      />
-
-      <Text style={styles.summaryItemValue}>
-        {value}
-      </Text>
-
-      <Text style={styles.summaryItemLabel}>
-        {label}
-      </Text>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statNote}>{note}</Text>
     </View>
   );
 }
 
-/* ============================================================
-   STATUS CARD
-============================================================ */
-
-function StatusCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: number;
-  icon: IconName;
-}) {
+function StatusPill({ status }: { status: Status }) {
   return (
-    <View style={styles.statusCard}>
-      <Ionicons
-        name={icon}
-        size={19}
-        color={colors.navy}
-      />
-
-      <Text style={styles.statusValue}>
-        {value}
-      </Text>
-
-      <Text style={styles.statusLabel}>
-        {label}
-      </Text>
+    <View style={styles.statusPill}>
+      <View style={[styles.statusDot, { backgroundColor: STATUS_TONE[status] }]} />
+      <Text style={[styles.statusText, status !== 'Pending' && { color: STATUS_TONE[status] }]}>{status}</Text>
     </View>
   );
 }
 
-/* ============================================================
-   ACTIVITY ROW
-============================================================ */
-
-function ActivityRow({
+function QueueButton({
+  label,
   icon,
-  title,
-  subtitle,
+  bg,
   onPress,
+  disabled,
 }: {
+  label: string;
   icon: IconName;
-  title: string;
-  subtitle: string;
+  bg: string;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.activityRow,
-        pressed && styles.activityRowPressed,
-      ]}
       onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      style={[styles.qBtn, { backgroundColor: bg, opacity: disabled ? 0.4 : 1 }]}
     >
-      <View style={styles.activityIcon}>
-        <Ionicons
-          name={icon}
-          size={18}
-          color={colors.navy}
-        />
-      </View>
-
-      <View style={styles.activityText}>
-        <Text style={styles.activityTitle}>
-          {title}
-        </Text>
-
-        <Text style={styles.activitySubtitle}>
-          {subtitle}
-        </Text>
-      </View>
-
-      <Ionicons
-        name="chevron-forward"
-        size={17}
-        color={colors.muted}
-      />
+      <Ionicons name={icon} size={14} color={colors.white} />
+      <Text style={styles.qBtnText}>{label}</Text>
     </Pressable>
   );
 }
 
-/* ============================================================
-   STYLES
-============================================================ */
+export default function DistrictDashboardScreen() {
+  const dispatch = useAppDispatch();
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { summary, queue, category, status, error } = useAppSelector((s) => s.district);
+  const user = useAppSelector((s) => s.auth.user);
+
+  const [pending, setPending] = useState<{ id: string; decision: Decision } | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(loadDashboard(category));
+    }, [dispatch, category]),
+  );
+
+  const confirm = async (credentials: SignOffCredentials) => {
+    if (!pending) return;
+    const result = await dispatch(decideApplication({ ...pending, credentials }));
+    setPending(null);
+    if (decideApplication.rejected.match(result)) {
+      Alert.alert('Not authorized', result.error.message ?? 'Action failed');
+    }
+  };
+
+  const goTab = (name: string) => (nav as any).navigate(name);
+  const soon = (name: string) => Alert.alert(name, 'This screen is not available yet.');
+
+  const runAction = (a: (typeof ACTIONS)[number]) => {
+    if (a.route) nav.navigate(a.route as any);
+    else if (a.tab) goTab(a.tab);
+    else soon(a.label);
+  };
+
+  const roleTitle = user?.designation || 'District Registrar';
+
+  return (
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.navy} />
+
+      {/* App bar */}
+      <SafeAreaView edges={['top']} style={styles.top}>
+        <View style={styles.appBar}>
+          <Pressable style={styles.menuBtn} onPress={() => soon('Menu')} accessibilityLabel="Menu">
+            <Ionicons name="menu" size={24} color={colors.white} />
+          </Pressable>
+          <Text style={styles.appBarTitle} numberOfLines={1}>
+            {roleTitle}
+          </Text>
+          <View style={styles.appBarRight}>
+            <Pressable onPress={() => goTab('Notification')} hitSlop={8} accessibilityLabel="Notifications">
+              <Ionicons name="notifications-outline" size={22} color={colors.white} />
+            </Pressable>
+            <Pressable onPress={() => goTab('Profile')} style={styles.avatar} accessibilityLabel="Profile">
+              <Ionicons name="person" size={16} color={colors.white} />
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={status === 'loading'} onRefresh={() => dispatch(loadDashboard(category))} />
+        }
+      >
+        {/* Welcome */}
+        <View style={styles.welcomeRow}>
+          <Text style={styles.welcome}>Welcome, {user?.designation || 'District Registrar'}</Text>
+          <View style={styles.livePill}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>Live Sync</Text>
+          </View>
+        </View>
+        <Text style={styles.subtitle}>Manage all civil registration records</Text>
+
+        {/* Stat cards */}
+        <View style={styles.stats}>
+          <StatCard label="Pending Approvals" value={summary?.pending ?? '-'} note="Requires review" icon="clipboard-outline" />
+          <StatCard label="Approved" value={summary?.approved ?? '-'} note="Synchronized" icon="checkmark-circle-outline" />
+          <StatCard label="Rejected" value={summary?.rejected ?? '-'} note="Action needed" icon="ban-outline" />
+          <StatCard
+            label="Total Records"
+            value={summary?.totalRecords ?? '-'}
+            note={`Fiscal ${new Date().getFullYear()}`}
+            icon="folder-open-outline"
+          />
+        </View>
+
+        {/* Queue filters */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Queue Filters</Text>
+          <Text style={styles.sectionNote}>{CATEGORIES.length} Categories</Text>
+        </View>
+        <View style={styles.chips}>
+          {CATEGORIES.map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => dispatch(loadDashboard(c))}
+              accessibilityRole="button"
+              accessibilityState={{ selected: c === category }}
+              style={[styles.chip, c === category && styles.chipActive]}
+            >
+              <Text style={styles.chipText}>{c}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Applications queue */}
+        <View style={[styles.sectionRow, { marginTop: 24 }]}>
+          <Text style={styles.sectionTitle}>Applications Queue</Text>
+          <View style={styles.sortPill}>
+            <Text style={styles.sortText}>Sort: Recent</Text>
+          </View>
+        </View>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <View style={styles.queueCard}>
+          {queue.length === 0 && status !== 'loading' ? (
+            <Text style={styles.empty}>No applications in this category.</Text>
+          ) : null}
+          {queue.map((item: ApplicationItem, i: number) => (
+            <View key={item.id} style={[styles.queueItem, i > 0 && styles.queueDivider]}>
+              <View style={styles.rowBetween}>
+                <View style={styles.idRow}>
+                  <Text style={styles.appId}>{item.id}</Text>
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>{item.category}</Text>
+                  </View>
+                </View>
+                <StatusPill status={item.status} />
+              </View>
+
+              <View style={[styles.rowBetween, { marginTop: 10 }]}>
+                <View>
+                  <Text style={styles.caption}>SUBJECT / APPLICANT</Text>
+                  <Text style={styles.name}>{item.applicantName}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.caption}>SUBMITTED</Text>
+                  <Text style={styles.date}>{item.submittedOn}</Text>
+                </View>
+              </View>
+
+              <View style={styles.qBtnRow}>
+                <QueueButton
+                  label="View"
+                  icon="eye-outline"
+                  bg={colors.navy}
+                  onPress={() => nav.navigate('NicApplicationReview', { applicationId: item.id })}
+                />
+                <QueueButton
+                  label="Approve"
+                  icon="checkmark"
+                  bg={colors.green}
+                  disabled={item.status !== 'Pending'}
+                  onPress={() => setPending({ id: item.id, decision: 'APPROVE' })}
+                />
+                <QueueButton
+                  label="Reject"
+                  icon="close"
+                  bg={colors.red}
+                  disabled={item.status !== 'Pending'}
+                  onPress={() => setPending({ id: item.id, decision: 'REJECT' })}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Quick actions */}
+        <View style={styles.actions}>
+          {ACTIONS.map((a) => (
+            <Pressable key={a.label} onPress={() => runAction(a)} accessibilityRole="button" style={styles.actionBtn}>
+              <Ionicons name={a.icon} size={16} color={colors.white} />
+              <Text style={styles.actionText}>{a.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+
+      <AuthorizeSignOffModal
+        visible={!!pending}
+        title={pending?.decision === 'APPROVE' ? 'Authorize Approval' : 'Authorize Rejection'}
+        onCancel={() => setPending(null)}
+        onConfirm={confirm}
+      />
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
+  root: { flex: 1, backgroundColor: colors.bg },
+  top: { backgroundColor: colors.navy },
+  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
 
-  header: {
-    height: 70,
-    backgroundColor: colors.navy,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-
-  logoCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: colors.white,
+  // app bar
+  appBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  menuBtn: { width: 40, height: 40, justifyContent: 'center' },
+  appBarTitle: { flex: 1, textAlign: 'center', color: colors.white, fontSize: 16, fontWeight: '600' },
+  appBarRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  headerTitle: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  headerSubtitle: {
-    color: '#D7DFEC',
-    fontSize: 10,
-    marginTop: 2,
-  },
-
-  notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  // welcome
+  welcomeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  welcome: { flex: 1, fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.text },
+  livePill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    height: 26,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: '#E3E1EC',
   },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#000' },
+  liveText: { fontSize: 10, color: colors.muted },
+  subtitle: { fontSize: 12, color: colors.text, marginTop: 2 },
 
-  scroll: {
-    flex: 1,
-  },
-
-  content: {
+  // stat cards
+  stats: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 16, marginTop: 24 },
+  statCard: {
+    flexBasis: '47.5%',
+    flexGrow: 1,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
     padding: 16,
-    paddingBottom: 30,
   },
+  statTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  statLabel: { fontSize: 12, color: colors.muted },
+  statValue: { fontSize: 32, lineHeight: 38, fontWeight: '700', color: colors.text, marginTop: 4 },
+  statNote: { fontSize: 10, color: colors.muted, marginTop: 6 },
 
-  welcomeSection: {
-    marginBottom: 15,
-  },
+  // sections
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  sectionNote: { fontSize: 10, color: colors.muted },
 
-  welcomeTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-  },
-
-  welcomeText: {
-    color: colors.muted,
-    fontSize: 11,
-    marginTop: 4,
-    lineHeight: 17,
-  },
-
-  summaryCard: {
-    backgroundColor: colors.white,
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 15,
-    marginBottom: 20,
-  },
-
-  summaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  summaryTitle: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  summaryDescription: {
-    color: colors.muted,
-    fontSize: 10,
-    marginTop: 2,
-  },
-
-  summaryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  summaryLoader: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-
-  totalNumber: {
-    color: colors.navy,
-    fontSize: 34,
-    fontWeight: '800',
-    marginTop: 13,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 13,
-  },
-
-  summaryStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-
-  summaryItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-
-  summaryItemValue: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-
-  summaryItemLabel: {
-    color: colors.muted,
-    fontSize: 9,
-    marginTop: 2,
-  },
-
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-
-  statusRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-    marginBottom: 20,
-  },
-
-  statusCard: {
-    flex: 1,
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-
-  statusValue: {
-    color: colors.navy,
-    fontSize: 19,
-    fontWeight: '800',
-    marginTop: 5,
-  },
-
-  statusLabel: {
-    color: colors.muted,
-    fontSize: 9,
-    marginTop: 2,
-  },
-
-  actionsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-
-  actionCount: {
-    color: colors.muted,
-    fontSize: 10,
-  },
-
-  actionsGrid: {
-    gap: 8,
-  },
-
-  actionCard: {
-    minHeight: 58,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  actionCardPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.99 }],
-  },
-
-  actionIconContainer: {
-    width: 39,
-    height: 39,
-    borderRadius: 9,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-
-  actionLabel: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  recentHeader: {
-    marginTop: 23,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  viewAllText: {
-    color: colors.navy,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  activityCard: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 11,
+  // filter chips
+  chips: { flexDirection: 'row', gap: 5, marginTop: 10 },
+  chip: {
+    height: 30,
     paddingHorizontal: 13,
-  },
-
-  activityRow: {
-    minHeight: 62,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  activityRowPressed: {
-    opacity: 0.65,
-  },
-
-  activityIcon: {
-    width: 36,
-    height: 36,
     borderRadius: 8,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.navy,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.navy,
   },
+  // remove this line to get the exact Figma look (all chips identical)
+  chipActive: { borderBottomColor: colors.amber },
+  chipText: { color: colors.white, fontSize: 12 },
 
-  activityText: {
-    flex: 1,
-  },
+  sortPill: { height: 20, paddingHorizontal: 10, borderRadius: 999, backgroundColor: colors.navy, justifyContent: 'center' },
+  sortText: { color: colors.white, fontSize: 10 },
+  error: { color: colors.red, marginTop: 8 },
 
-  activityTitle: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '600',
+  // queue
+  queueCard: {
+    marginTop: 10,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
+  empty: { padding: 16, color: colors.muted, fontSize: 12 },
+  queueItem: { padding: 16 },
+  queueDivider: { borderTopWidth: 1, borderTopColor: '#EEEEEE' },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  idRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  appId: { fontSize: 12, letterSpacing: 0.3, color: colors.muted },
+  tag: { height: 16, paddingHorizontal: 7, borderRadius: 999, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' },
+  tagText: { fontSize: 9, color: colors.muted },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 18,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: colors.chip,
+  },
+  statusDot: { width: 5, height: 5, borderRadius: 3 },
+  statusText: { fontSize: 10, color: colors.muted },
+  caption: { fontSize: 9, letterSpacing: 0.6, color: colors.muted },
+  name: { fontSize: 18, fontWeight: '600', color: colors.text, marginTop: 2 },
+  date: { fontSize: 12, color: colors.muted, marginTop: 4 },
+  qBtnRow: { flexDirection: 'row', gap: 5, marginTop: 14 },
+  qBtn: {
+    width: 92,
+    height: 37,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  qBtnText: { color: colors.white, fontSize: 12, fontWeight: '500' },
 
-  activitySubtitle: {
-    color: colors.muted,
-    fontSize: 9,
-    marginTop: 3,
+  // quick actions
+  actions: { marginTop: 28, gap: 5 },
+  actionBtn: {
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: colors.navy,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
-
-  activityDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-  },
-
-  bottomSpace: {
-    height: 20,
-  },
+  actionText: { color: colors.white, fontSize: 13, fontWeight: '500' },
 });
