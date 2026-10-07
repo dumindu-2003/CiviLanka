@@ -5,7 +5,7 @@ import type { SignOffCredentials } from '../types/auth';
 
 export { API_BASE_URL }; // profileService uses it for the photo URL
 
-const http = axios.create({ baseURL: API_BASE_URL, timeout: 15000 });
+const http = axios.create({ baseURL: API_BASE_URL, timeout: 10000 });
 
 // every request carries the JWT (saved by tokenStorage after login)
 http.interceptors.request.use(async (config) => {
@@ -29,6 +29,11 @@ const unwrap = <T>(body: ApiResponse<T>): T => {
 const toError = (e: any): Error => {
   const d = e?.response?.data;
   const detail = typeof d?.detail === 'string' ? d.detail : undefined; // FastAPI 401 -> { detail }
+  if (!e?.response && ['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(e?.code)) {
+    return new Error(
+      `Cannot reach the CiviLanka API at ${API_BASE_URL}. Confirm the backend is running on port 8000. For an Android phone connected to this PC by USB, run "adb reverse tcp:8000 tcp:8000" and set EXPO_PUBLIC_API_URL=http://127.0.0.1:8000; otherwise use a network-reachable PC address.`,
+    );
+  }
   return new Error(d?.Result ?? detail ?? e?.message ?? 'Network error');
 };
 
@@ -56,7 +61,8 @@ export const apiClient = {
     try {
       const fd = new FormData();
       fd.append('file', file as any);
-      const res = await http.post<ApiResponse<T>>(url, fd, {
+            const res = await http.post<ApiResponse<T>>(url, fd, {
+        timeout: 60000,
         headers: { 'Content-Type': 'multipart/form-data' },
         transformRequest: (d) => d,
       });
