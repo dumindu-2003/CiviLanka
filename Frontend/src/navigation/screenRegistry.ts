@@ -9,7 +9,6 @@ import MarriageDashboardScreen from '../screens/marriage/MarriageDashboardScreen
 import MarriageRegistrationStep1Screen from '../screens/marriage/MarriageRegistrationStep1Screen';
 import MarriageRegistrationStep2Screen from '../screens/marriage/MarriageRegistrationStep2Screen';
 // Other developers: import your screens here
-
 // Backend `homeScreen` value -> component shown in the Home tab
 export const dashboards: Record<string, ComponentType<any>> = {
   DistrictDashboard: DistrictDashboardScreen,
@@ -21,7 +20,11 @@ export const dashboards: Record<string, ComponentType<any>> = {
 };
 
 // Backend `allowedScreens` value -> stack screen
-export const stackScreens: Record<string, { component: ComponentType<any>; title: string; headerShown?: boolean }> = {
+// headerShown: false = the screen draws its own header (default is true)
+export const stackScreens: Record<
+  string,
+  { component: ComponentType<any>; title: string; headerShown?: boolean }
+> = {
   Reports: { component: ReportsScreen, title: 'Reports' },
   NicPendingList: { component: NicPendingListScreen, title: 'NIC Pending Applications', headerShown: false },
   NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review', headerShown: false },
