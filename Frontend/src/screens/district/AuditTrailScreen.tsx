@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -289,7 +288,7 @@ function AuditCard({
           {entry.created_at}
         </Text>
       </View>
-=======
+
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -408,13 +407,13 @@ export default function AuditTrailScreen() {
           );
         }}
       />
->>>>>>> 74380a1f1690c3b61a3d5836430bed390a595505
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
+
   root: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -649,5 +648,5 @@ const styles = StyleSheet.create({
   time: { fontSize: 11, color: colors.muted },
   desc: { fontSize: 13, color: colors.text, marginTop: 8 },
   meta: { fontSize: 11, color: colors.muted, marginTop: 4 },
->>>>>>> 74380a1f1690c3b61a3d5836430bed390a595505
+
 });
