@@ -395,6 +395,7 @@ function StepOne({
 
         <InputField
           value={form.dateOfDemise}
+          placeholder="YYYY-MM-DD"
           onChangeText={(value) =>
             updateField(
               "dateOfDemise",
@@ -408,6 +409,7 @@ function StepOne({
 
         <InputField
           value={form.timeOfDemise}
+          placeholder="HH:mm"
           onChangeText={(value) =>
             updateField(
               "timeOfDemise",
@@ -534,6 +536,7 @@ function StepTwo({
 
         <InputField
           value={form.dateOfBirth}
+          placeholder="YYYY-MM-DD"
           onChangeText={(value) =>
             updateField(
               "dateOfBirth",

@@ -359,6 +359,7 @@ function StepOne({
         <InputField
           label="Date of Birth"
           value={form.birthDate}
+          placeholder="YYYY-MM-DD"
           onChangeText={(value) =>
             updateField(
               "birthDate",
@@ -370,6 +371,7 @@ function StepOne({
         <InputField
           label="Time of Birth"
           value={form.birthTime}
+          placeholder="HH:mm"
           onChangeText={(value) =>
             updateField(
               "birthTime",
@@ -626,6 +628,7 @@ function StepTwo({
         <InputField
           label="Registration Date"
           value={form.registrationDate}
+          placeholder="YYYY-MM-DD"
           onChangeText={(value) =>
             updateField(
               "registrationDate",
@@ -929,6 +932,7 @@ function InputField({
   rightLabel,
   value,
   onChangeText,
+  placeholder,
   multiline = false,
   keyboardType = "default",
   required = false,
@@ -938,6 +942,7 @@ function InputField({
   rightLabel?: string;
   value: string;
   onChangeText: (value: string) => void;
+  placeholder?: string;
   multiline?: boolean;
   keyboardType?: "default" | "numeric" | "phone-pad";
   required?: boolean;
@@ -961,6 +966,7 @@ function InputField({
         <TextInput
           value={value}
           onChangeText={onChangeText}
+          placeholder={placeholder}
           multiline={multiline}
           keyboardType={keyboardType}
           textAlignVertical={

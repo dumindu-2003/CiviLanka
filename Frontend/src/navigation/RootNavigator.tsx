@@ -17,7 +17,7 @@ export default function RootNavigator() {
   if (!user) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Landing" component={LandingScreen} />
+        <Stack.Screen name="Landing" component={birthdayScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
       </Stack.Navigator>
     );
