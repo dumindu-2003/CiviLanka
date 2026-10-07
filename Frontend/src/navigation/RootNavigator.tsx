@@ -27,19 +27,17 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-      {allowedScreens
-        .filter((key) => stackScreens[key])
-        .map((key) => (
-          <Stack.Screen
-            key={key}
-            name={key as keyof RootStackParamList}
-            component={stackScreens[key].component}
-            options={{
-              title: stackScreens[key].title,
-              headerShown: stackScreens[key].headerShown ?? true,
-            }}
-          />
-        ))}
+{Object.entries(stackScreens).map(([key, screen]) => (
+  <Stack.Screen
+    key={key}
+    name={key as keyof RootStackParamList}
+    component={screen.component}
+    options={{
+      title: screen.title,
+      headerShown: screen.headerShown ?? true,
+    }}
+  />
+))}
     </Stack.Navigator>
   );
 }

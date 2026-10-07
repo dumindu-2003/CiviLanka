@@ -163,3 +163,75 @@ export const getReportList = () =>
 
 // GET /api/district/ReportTrend         -> last 6 months, for the chart
 export const getReportTrend = () => apiClient.get<{ month: string; total: number }[]>('/api/district/ReportTrend');
+
+// ── ADD PROFILE (officer enrollment) ───────────────────────────────────────
+// AddProfileScreen -> last step "Authorize & Submit"   (District Registrar only, needs the authorizing officer's credentials)
+// POST /api/district/OfficerCreate
+// body    : { username, password, service_number, role_name, officer_name, officer_phone, unit_name,
+//             nic, date_of_birth: 'yyyy-MM-dd', gender, email, address, signoff_* }
+// returns : { officer_id }
+export interface NewOfficer {
+  username: string;
+  password: string;
+  service_number: string;
+  role_name: string; // roles.role_name, e.g. 'Village Officer'
+  officer_name: string;
+  officer_phone: string;
+  unit_name: string;
+  nic: string;
+  date_of_birth: string; // yyyy-MM-dd
+  gender: string; // Male | Female | Other
+  email: string;
+  address: string;
+}
+export const createOfficer = async (officer: NewOfficer, credentials: SignOffCredentials) => {
+  if (DEMO_MODE) {
+    await wait();
+    return { officer_id: 0 };
+  }
+  return apiClient.post<{ officer_id: number }>('/api/district/OfficerCreate', {
+    ...officer,
+    ...toSignoff(credentials),
+  });
+};
+
+// ── FIND PEOPLE ────────────────────────────────────────────────────────────
+// FindPeopleScreen -> NIC or officer service number
+// GET /api/district/FindPerson?search_value=199012345678     (no search_value = only the recent searches)
+// returns : { person: FoundPerson | null, recent: [{ created_at, description }] }
+export interface FoundPerson {
+  person_type: 'Citizen' | 'Officer';
+  person_id: number;
+  full_name: string | null;
+  nic: string | null;
+  date_of_birth: string | null; // yyyy-MM-dd
+  gender: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  service_number: string | null; // officers
+  role_name: string | null; // officers
+  unit_name: string | null; // officers
+}
+export interface RecentSearch {
+  created_at: string;
+  description: string; // 'Find person: <value> | <name or Not found>'
+}
+export interface FindPersonResult {
+  person: FoundPerson | null;
+  recent: RecentSearch[];
+}
+export const findPerson = async (searchValue?: string): Promise<FindPersonResult> => {
+  if (DEMO_MODE) {
+    await wait();
+    const demo: FoundPerson | null = searchValue
+      ? {
+          person_type: 'Citizen', person_id: 1, full_name: 'Saman Perera', nic: searchValue, date_of_birth: '1990-05-14',
+          gender: 'Male', phone: '0771234567', email: null, address: 'Colombo', service_number: null, role_name: null, unit_name: null,
+        }
+      : null;
+    return { person: demo, recent: [] };
+  }
+  const res = await apiClient.get<FindPersonResult>('/api/district/FindPerson', { search_value: searchValue });
+  return { person: res?.person ?? null, recent: res?.recent ?? [] };
+};
