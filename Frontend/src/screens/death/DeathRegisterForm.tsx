@@ -24,29 +24,7 @@ type Props = {
   onUpdate?: (payload: DeathApplicationPayload) => Promise<void>;
 };
 
-type FormData = {
-  certificateType: string;
-
-  informantName: string;
-  nic: string;
-  relationship: string;
-  informantContact: string;
-  informantAddress: string;
-
-  placeOfDemise: string;
-  dateOfDemise: string;
-  timeOfDemise: string;
-
-  deceasedNic: string;
-  deceasedName: string;
-  gender: string;
-  dateOfBirth: string;
-  maritalStatus: string;
-  occupation: string;
-  deceasedAddress: string;
-
-  causeOfDeath: string;
-};
+type FormData = DeathApplicationPayload;
 
 export default function DeathRegisterForm({
   onBack,
@@ -60,12 +38,10 @@ export default function DeathRegisterForm({
   const [showSignOff, setShowSignOff] = useState(false);
 
   const [form, setForm] = useState<FormData>(initialData ?? {
-    certificateType: "Death Certificate (Official Notification)",
     informantName: "",
     nic: "",
     relationship: "",
     informantContact: "",
-    informantAddress: "",
     placeOfDemise: "",
     dateOfDemise: "",
     timeOfDemise: "",
@@ -73,8 +49,8 @@ export default function DeathRegisterForm({
     deceasedName: "",
     gender: "",
     dateOfBirth: "",
+    ageAtDeath: "",
     maritalStatus: "",
-    occupation: "",
     deceasedAddress: "",
     causeOfDeath: "",
   });
@@ -216,7 +192,7 @@ export default function DeathRegisterForm({
 
               <Text className="text-[14px] font-bold text-[#171717]">
                 {step === 1
-                  ? "Informant & Applicant Details"
+                  ? "Informant & Death Details"
                   : "Deceased Legal Particulars"}
               </Text>
             </View>
@@ -358,24 +334,6 @@ function StepOne({
 }) {
   return (
     <View>
-      {/* Certificate Type */}
-      <SectionCard
-        title="Certificate Type"
-        badge=""
-      >
-        <FieldLabel text="Certificate Type" />
-
-        <SelectField
-          value={form.certificateType}
-          onPress={() =>
-            updateField(
-              "certificateType",
-              "Death Certificate (Official Notification)"
-            )
-          }
-        />
-      </SectionCard>
-
       {/* Informant */}
       <SectionCard
         title="Informant's Details"
@@ -401,14 +359,9 @@ function StepOne({
 
         <FieldLabel text="Relationship to Deceased" />
 
-        <SelectField
+        <InputField
           value={form.relationship}
-          onPress={() =>
-            updateField(
-              "relationship",
-              "Son / Daughter"
-            )
-          }
+          onChangeText={(value) => updateField("relationship", value)}
         />
 
         <FieldLabel text="Informant's Contact Number" />
@@ -424,19 +377,6 @@ function StepOne({
           keyboardType="phone-pad"
         />
 
-        <FieldLabel text="Informant's Permanent Residential Address" />
-
-        <InputField
-          value={form.informantAddress}
-          onChangeText={(value) =>
-            updateField(
-              "informantAddress",
-              value
-            )
-          }
-          multiline
-          height={58}
-        />
       </SectionCard>
 
       {/* Demise Context */}
@@ -446,14 +386,9 @@ function StepOne({
       >
         <FieldLabel text="Immediate Place of Demise" />
 
-        <SelectField
+        <InputField
           value={form.placeOfDemise}
-          onPress={() =>
-            updateField(
-              "placeOfDemise",
-              "Hospital"
-            )
-          }
+          onChangeText={(value) => updateField("placeOfDemise", value)}
         />
 
         <FieldLabel text="Date of Demise" />
@@ -532,16 +467,7 @@ function StepTwo({
             />
           </View>
 
-          <View className="ml-2 rounded-md bg-[#EEF5EE] px-2 py-2">
-            <Text className="text-[7px] font-bold text-[#315D35]">
-              ✓ VERIFIED
-            </Text>
-          </View>
         </View>
-
-        <Text className="mb-3 mt-1 text-[7px] text-[#7A8088]">
-          Auto-synced with National Registration Registry
-        </Text>
 
         {/* Name */}
         <FieldLabel text="Full Legal Name" />
@@ -617,66 +543,23 @@ function StepTwo({
           rightText="▣"
         />
 
-        {/* Date of Demise */}
-        <FieldLabel text="Date of Demise" />
-
-        <InputField
-          value={form.dateOfDemise}
-          onChangeText={(value) =>
-            updateField(
-              "dateOfDemise",
-              value
-            )
-          }
-          rightText="▣"
-        />
-
-        {/* Time */}
-        <FieldLabel text="Time of Demise" />
-
-        <InputField
-          value={form.timeOfDemise}
-          onChangeText={(value) =>
-            updateField(
-              "timeOfDemise",
-              value
-            )
-          }
-          rightText="◷"
-        />
-
         {/* Age */}
         <FieldLabel text="Age at Demise" />
 
         <InputField
-          value="70 Yrs"
-          onChangeText={() => {}}
+          value={form.ageAtDeath}
+          onChangeText={(value) =>
+            updateField("ageAtDeath", value)
+          }
+          keyboardType="numeric"
         />
 
         {/* Marital Status */}
         <FieldLabel text="Marital Status" />
 
-        <SelectField
-          value={form.maritalStatus}
-          onPress={() =>
-            updateField(
-              "maritalStatus",
-              "Widowed"
-            )
-          }
-        />
-
-        {/* Occupation */}
-        <FieldLabel text="Occupation Prior to Demise" />
-
         <InputField
-          value={form.occupation}
-          onChangeText={(value) =>
-            updateField(
-              "occupation",
-              value
-            )
-          }
+          value={form.maritalStatus}
+          onChangeText={(value) => updateField("maritalStatus", value)}
         />
 
         {/* Address */}
@@ -827,35 +710,5 @@ function InputField({
         </Text>
       )}
     </View>
-  );
-}
-
-/* =========================================================
-   SELECT FIELD
-========================================================= */
-
-function SelectField({
-  value,
-  onPress,
-}: {
-  value: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="min-h-[36px] flex-row items-center rounded-md border border-[#DDE2E8] bg-[#F5F6F7] px-2.5"
-    >
-      <Text
-        className="flex-1 text-[9px] text-[#333333]"
-        numberOfLines={1}
-      >
-        {value}
-      </Text>
-
-      <Text className="text-[10px] text-[#0B2855]">
-        ⌄
-      </Text>
-    </Pressable>
   );
 }

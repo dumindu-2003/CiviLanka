@@ -18,11 +18,51 @@ import {
   updateDeathApplication,
 } from "../../actions/deathAction";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import type { DeathApplication } from "../../types/death";
+import type {
+  DeathApplication,
+  DeathApplicationPayload,
+} from "../../types/death";
 
 type Props = {
   onBack: () => void;
 };
+
+function toDeathPayload(application: DeathApplication): DeathApplicationPayload {
+  const {
+    informantName,
+    nic,
+    relationship,
+    informantContact,
+    placeOfDemise,
+    dateOfDemise,
+    timeOfDemise,
+    deceasedNic,
+    deceasedName,
+    gender,
+    dateOfBirth,
+    ageAtDeath,
+    causeOfDeath,
+    maritalStatus,
+    deceasedAddress,
+  } = application;
+  return {
+    informantName,
+    nic,
+    relationship,
+    informantContact,
+    placeOfDemise,
+    dateOfDemise,
+    timeOfDemise,
+    deceasedNic,
+    deceasedName,
+    gender,
+    dateOfBirth,
+    ageAtDeath,
+    causeOfDeath,
+    maritalStatus,
+    deceasedAddress,
+  };
+}
 
 export default function AllDeathApplications({
   onBack,
@@ -67,13 +107,12 @@ export default function AllDeathApplications({
 
   if (selectedApplication) {
     if (editingApplication) {
-      const { id, status: applicationStatus, submittedOn, ...initialData } = selectedApplication;
-      void submittedOn;
-      const saveChanges = async (payload: typeof initialData) => {
+      const { id } = selectedApplication;
+      const initialData = toDeathPayload(selectedApplication);
+      const saveChanges = async (payload: DeathApplicationPayload) => {
         await dispatch(updateDeathApplication({
           id,
           payload,
-          status: applicationStatus,
         })).unwrap();
         await dispatch(loadDeathApplications()).unwrap();
         setEditingApplication(false);

@@ -170,8 +170,8 @@ export default function UpdateDeathApplication({
           />
 
           <InfoRow
-            label="Occupation"
-            value={application.occupation}
+            label="Age at Death"
+            value={application.ageAtDeath}
           />
 
           <InfoRow
@@ -205,10 +205,6 @@ export default function UpdateDeathApplication({
             value={application.informantContact}
           />
 
-          <InfoRow
-            label="Residential Address"
-            value={application.informantAddress}
-          />
         </SectionCard>
 
         <Pressable
@@ -257,6 +253,12 @@ export default function UpdateDeathApplication({
           >
             {application.status === "Draft" ? "Open" : application.status}
           </Text>
+          {application.rejectionReason ? (
+            <InfoRow
+              label="Rejection Reason"
+              value={application.rejectionReason}
+            />
+          ) : null}
         </SectionCard>
 
         {/* Back button */}

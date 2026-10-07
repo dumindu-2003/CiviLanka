@@ -4,6 +4,7 @@ import { useAppSelector } from '../store/hooks';
 import { stackScreens } from './screenRegistry';
 import MainTabs from './MainTabs';
 import LandingScreen from '../screens/shared/LandingScreen';
+import birthdayScreen from '../screens/birth/BirthTestScreen';
 import LoginScreen from '../screens/shared/LoginScreen';
 import type { RootStackParamList } from './types';
 

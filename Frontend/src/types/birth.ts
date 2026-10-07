@@ -8,15 +8,11 @@ export interface BirthSummary {
 }
 
 export interface BirthApplicationPayload {
-  applicantName: string;
-  applicantNic: string;
-  applicantDob: string;
-  applicantAddress: string;
   babyName: string;
   birthDate: string;
   birthTime: string;
   birthPlace: string;
-  gender: 'Male' | 'Female';
+  gender: string;
   birthWeight: string;
   fatherName: string;
   fatherNic: string;
@@ -26,12 +22,23 @@ export interface BirthApplicationPayload {
   motherNic: string;
   motherOccupation: string;
   motherAddress: string;
-  medicalOfficer: string;
+  hospitalName: string;
   registrationDate: string;
 }
 
 export interface BirthApplication extends BirthApplicationPayload {
   id: string;
+  appRef: string;
+  applicantId: string;
   status: BirthStatus;
+  rejectionReason: string;
   submittedOn: string;
+  submittedBy: string;
+  signedOffBy: string;
+  approvedBy: string;
+  approvedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
 }

@@ -1,40 +1,15 @@
 import { requestApi } from './apiClient';
-import { DEMO_MODE } from '../config';
 import type { SignOffCredentials } from '../types/auth';
-import type { BirthApplication, BirthApplicationPayload, BirthStatus, BirthSummary } from '../types/birth';
+import type {
+  BirthApplication,
+  BirthApplicationPayload,
+  BirthStatus,
+  BirthSummary,
+} from '../types/birth';
 
 type ApiRecord = Record<string, unknown>;
 
 const ROUTE = 'birth';
-const wait = (ms = 250) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-const demoApplications: BirthApplication[] = [
-  {
-    id: 'B001',
-    applicantName: 'Kavinda Jayasuriya',
-    applicantNic: '',
-    applicantDob: '',
-    applicantAddress: '',
-    babyName: 'Thisal Methuja',
-    birthDate: '2026-09-01',
-    birthTime: '',
-    birthPlace: 'Colombo National Hospital',
-    gender: 'Male',
-    birthWeight: '',
-    fatherName: 'Kavinda Jayasuriya',
-    fatherNic: '',
-    fatherOccupation: '',
-    fatherAddress: '',
-    motherName: 'Thilini Senanayake',
-    motherNic: '',
-    motherOccupation: '',
-    motherAddress: '',
-    medicalOfficer: '',
-    registrationDate: '',
-    status: 'Pending',
-    submittedOn: '2026-09-01',
-  },
-];
 
 function readValue(record: ApiRecord, ...keys: string[]): string {
   for (const key of keys) {
@@ -58,57 +33,60 @@ function toBirthApplication(value: unknown): BirthApplication {
     throw new Error('The birth API returned an invalid application record.');
   }
   const row = value as ApiRecord;
-  const id = readValue(row, 'app_id', 'application_id', 'id');
-  if (!id) throw new Error('The birth API returned a record without an application ID.');
+  const id = readValue(row, 'birth_app_id', 'app_id');
+  if (!id) throw new Error('The birth API returned a record without a birth_app_id.');
 
   return {
     id,
+    appRef: readValue(row, 'app_ref'),
+    applicantId: readValue(row, 'applicant_id'),
+    babyName: readValue(row, 'baby_full_name'),
+    birthDate: readValue(row, 'date_of_birth'),
+    birthTime: readValue(row, 'time_of_birth'),
+    birthPlace: readValue(row, 'place_of_birth'),
+    gender: readValue(row, 'gender'),
+    birthWeight: readValue(row, 'birth_weight'),
+    fatherName: readValue(row, 'father_name'),
+    fatherNic: readValue(row, 'father_nic'),
+    fatherOccupation: readValue(row, 'father_occupation'),
+    fatherAddress: readValue(row, 'father_address'),
+    motherName: readValue(row, 'mother_name'),
+    motherNic: readValue(row, 'mother_nic'),
+    motherOccupation: readValue(row, 'mother_occupation'),
+    motherAddress: readValue(row, 'mother_address'),
+    hospitalName: readValue(row, 'hospital_name'),
+    registrationDate: readValue(row, 'registration_date'),
     status: normalizeStatus(readValue(row, 'status')),
-    submittedOn: readValue(row, 'submitted_on', 'created_at', 'registration_date'),
-    applicantName: readValue(row, 'applicant_name', 'applicantName'),
-    applicantNic: readValue(row, 'applicant_nic', 'applicantNic'),
-    applicantDob: readValue(row, 'applicant_date_of_birth', 'applicant_dob', 'applicantDob'),
-    applicantAddress: readValue(row, 'applicant_address', 'applicantAddress'),
-    babyName: readValue(row, 'baby_full_name', 'baby_name', 'babyName'),
-    birthDate: readValue(row, 'date_of_birth', 'birth_date', 'birthDate'),
-    birthTime: readValue(row, 'time_of_birth', 'birth_time', 'birthTime'),
-    birthPlace: readValue(row, 'place_of_birth', 'birth_place', 'birthPlace'),
-    gender: readValue(row, 'gender') === 'Female' ? 'Female' : 'Male',
-    birthWeight: readValue(row, 'birth_weight', 'birthWeight'),
-    fatherName: readValue(row, 'father_full_name', 'father_name', 'fatherName'),
-    fatherNic: readValue(row, 'father_nic', 'fatherNic'),
-    fatherOccupation: readValue(row, 'father_occupation', 'fatherOccupation'),
-    fatherAddress: readValue(row, 'father_address', 'fatherAddress'),
-    motherName: readValue(row, 'mother_full_name', 'mother_name', 'motherName'),
-    motherNic: readValue(row, 'mother_nic', 'motherNic'),
-    motherOccupation: readValue(row, 'mother_occupation', 'motherOccupation'),
-    motherAddress: readValue(row, 'mother_address', 'motherAddress'),
-    medicalOfficer: readValue(row, 'medical_officer_name', 'medical_officer', 'medicalOfficer'),
-    registrationDate: readValue(row, 'registration_date', 'registrationDate'),
+    rejectionReason: readValue(row, 'rejection_reason'),
+    submittedOn: readValue(row, 'created_at', 'registration_date'),
+    submittedBy: readValue(row, 'submitted_by'),
+    signedOffBy: readValue(row, 'signed_off_by'),
+    approvedBy: readValue(row, 'approved_by'),
+    approvedAt: readValue(row, 'approved_at'),
+    createdAt: readValue(row, 'created_at'),
+    updatedAt: readValue(row, 'updated_at'),
+    createdBy: readValue(row, 'created_by'),
+    updatedBy: readValue(row, 'updated_by'),
   };
 }
 
 function toApiData(payload: BirthApplicationPayload): ApiRecord {
   return {
-    applicant_name: payload.applicantName,
-    applicant_nic: payload.applicantNic,
-    applicant_date_of_birth: payload.applicantDob,
-    applicant_address: payload.applicantAddress,
     baby_full_name: payload.babyName,
     date_of_birth: payload.birthDate,
     time_of_birth: payload.birthTime,
     place_of_birth: payload.birthPlace,
     gender: payload.gender,
     birth_weight: payload.birthWeight,
-    father_full_name: payload.fatherName,
+    father_name: payload.fatherName,
     father_nic: payload.fatherNic,
     father_occupation: payload.fatherOccupation,
     father_address: payload.fatherAddress,
-    mother_full_name: payload.motherName,
+    mother_name: payload.motherName,
     mother_nic: payload.motherNic,
     mother_occupation: payload.motherOccupation,
     mother_address: payload.motherAddress,
-    medical_officer_name: payload.medicalOfficer,
+    hospital_name: payload.hospitalName,
     registration_date: payload.registrationDate,
   };
 }
@@ -125,42 +103,21 @@ export const birthService = {
   },
 
   getQueue: async (): Promise<BirthApplication[]> => {
-    if (DEMO_MODE) {
-      await wait();
-      return demoApplications.map((item) => ({ ...item }));
-    }
     const rows = await requestApi<unknown[]>(`${ROUTE}/List`, 'GET');
     if (!Array.isArray(rows)) throw new Error('The birth API returned an invalid application list.');
     return rows.map(toBirthApplication);
   },
 
-  get: async (id: string): Promise<BirthApplication> => {
-    if (DEMO_MODE) {
-      await wait();
-      const item = demoApplications.find((application) => application.id === id);
-      if (!item) throw new Error('Birth application not found.');
-      return { ...item };
-    }
-    return toBirthApplication(
+  get: async (id: string): Promise<BirthApplication> =>
+    toBirthApplication(
       await requestApi<unknown>(`${ROUTE}/Get`, 'GET', undefined, { app_id: id }),
-    );
-  },
+    ),
 
   create: async (
     payload: BirthApplicationPayload,
     status: 'Draft' | 'Pending',
     credentials?: SignOffCredentials,
   ): Promise<null> => {
-    if (DEMO_MODE) {
-      await wait();
-      demoApplications.unshift({
-        ...payload,
-        id: `B${String(Date.now()).slice(-6)}`,
-        status,
-        submittedOn: new Date().toISOString().slice(0, 10),
-      });
-      return null;
-    }
     await requestApi<unknown>(`${ROUTE}/Create`, 'POST', {
       status,
       data: toApiData(payload),
@@ -178,33 +135,25 @@ export const birthService = {
   update: async (
     id: string,
     payload: BirthApplicationPayload,
-    status: BirthStatus,
   ): Promise<null> => {
-    if (DEMO_MODE) {
-      await wait();
-      const item = demoApplications.find((application) => application.id === id);
-      if (!item) throw new Error('Birth application not found.');
-      Object.assign(item, payload, { status });
-      return null;
+    const appId = Number(id);
+    if (!Number.isSafeInteger(appId) || appId <= 0) {
+      throw new Error('The birth application ID must be a positive integer.');
     }
     await requestApi<unknown>(`${ROUTE}/Update`, 'POST', {
-      app_id: Number(id),
-      status,
+      app_id: appId,
       data: toApiData(payload),
     });
     return null;
   },
 
   submit: async (id: string, credentials: SignOffCredentials): Promise<null> => {
-    if (DEMO_MODE) {
-      await wait();
-      const item = demoApplications.find((application) => application.id === id);
-      if (!item) throw new Error('Birth application not found.');
-      item.status = 'Pending';
-      return null;
+    const appId = Number(id);
+    if (!Number.isSafeInteger(appId) || appId <= 0) {
+      throw new Error('The birth application ID must be a positive integer.');
     }
     await requestApi<unknown>(`${ROUTE}/Submit`, 'POST', {
-      app_id: Number(id),
+      app_id: appId,
       signoff_username: credentials.officerUserName,
       signoff_service_number: credentials.authorizingServiceNo,
       signoff_password: credentials.officerPassword,

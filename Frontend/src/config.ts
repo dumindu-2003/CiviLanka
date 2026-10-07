@@ -1,5 +1,4 @@
-// 1 = Log in goes straight to the dashboard with mock data (no backend needed)
-// 0 = real login form + real API
+// Demo login and district lookups only; birth/death records always use the API.
 declare const process: {
 	env: {
 		EXPO_PUBLIC_DEMO_MODE?: string;

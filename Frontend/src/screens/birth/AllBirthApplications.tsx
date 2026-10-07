@@ -18,11 +18,53 @@ import {
   updateBirthApplication,
 } from "../../actions/birthAction";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import type { BirthApplication } from "../../types/birth";
+import type {
+  BirthApplication,
+  BirthApplicationPayload,
+} from "../../types/birth";
 
 type Props = {
   onBack: () => void;
 };
+
+function toBirthPayload(application: BirthApplication): BirthApplicationPayload {
+  const {
+    babyName,
+    birthDate,
+    birthTime,
+    birthPlace,
+    gender,
+    birthWeight,
+    fatherName,
+    fatherNic,
+    fatherOccupation,
+    fatherAddress,
+    motherName,
+    motherNic,
+    motherOccupation,
+    motherAddress,
+    hospitalName,
+    registrationDate,
+  } = application;
+  return {
+    babyName,
+    birthDate,
+    birthTime,
+    birthPlace,
+    gender,
+    birthWeight,
+    fatherName,
+    fatherNic,
+    fatherOccupation,
+    fatherAddress,
+    motherName,
+    motherNic,
+    motherOccupation,
+    motherAddress,
+    hospitalName,
+    registrationDate,
+  };
+}
 
 export default function AllBirthAplications({ onBack }: Props) {
   const dispatch = useAppDispatch();
@@ -53,13 +95,12 @@ export default function AllBirthAplications({ onBack }: Props) {
   // show UpdateBirthApplication screen
   if (selectedApplication) {
     if (editingApplication) {
-      const { id, status: applicationStatus, submittedOn, ...initialData } = selectedApplication;
-      void submittedOn;
-      const saveChanges = async (payload: typeof initialData) => {
+      const { id } = selectedApplication;
+      const initialData = toBirthPayload(selectedApplication);
+      const saveChanges = async (payload: BirthApplicationPayload) => {
         await dispatch(updateBirthApplication({
           id,
           payload,
-          status: applicationStatus,
         })).unwrap();
         await dispatch(loadBirthApplications()).unwrap();
         setEditingApplication(false);

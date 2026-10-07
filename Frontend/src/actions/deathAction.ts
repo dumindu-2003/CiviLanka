@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { deathService } from '../services/deathService';
 import type { SignOffCredentials } from '../types/auth';
-import type { DeathApplicationPayload, DeathStatus } from '../types/death';
+import type { DeathApplicationPayload } from '../types/death';
 
 export const loadDeathApplications = createAsyncThunk(
   'death/loadApplications',
@@ -24,8 +24,8 @@ export const createDeathApplication = createAsyncThunk(
 
 export const updateDeathApplication = createAsyncThunk(
   'death/updateApplication',
-  (arg: { id: string; payload: DeathApplicationPayload; status: DeathStatus }) =>
-    deathService.update(arg.id, arg.payload, arg.status),
+  (arg: { id: string; payload: DeathApplicationPayload }) =>
+    deathService.update(arg.id, arg.payload),
 );
 
 export const submitDeathApplication = createAsyncThunk(

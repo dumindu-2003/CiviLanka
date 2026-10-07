@@ -17,8 +17,10 @@ EXPO_PUBLIC_API_URL=http://192.168.1.10:8000
 EXPO_PUBLIC_DEMO_MODE=0
 ```
 
-Use `EXPO_PUBLIC_DEMO_MODE=1` for sample login and in-memory birth/death records.
-Set it to `0` to use the authenticated FastAPI endpoints.
+Birth and death records always use the authenticated FastAPI endpoints; they no
+longer use bundled sample records. `EXPO_PUBLIC_DEMO_MODE=1` affects the
+separate demo login and district lookup flows only. Set it to `0` to use real
+authentication.
 
 Birth and death CRUD routes and database procedure requirements are described in
 the [backend README](../Backend/README.md).

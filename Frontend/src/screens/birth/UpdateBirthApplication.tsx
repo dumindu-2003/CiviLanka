@@ -154,6 +154,12 @@ export default function UpdateBirthApplication({
           >
             {registration.status === "Draft" ? "Open" : registration.status}
           </Text>
+          {registration.rejectionReason ? (
+            <InfoRow
+              label="Rejection Reason"
+              value={registration.rejectionReason}
+            />
+          ) : null}
         </SectionCard>
 
         {/* BACK BUTTON */}

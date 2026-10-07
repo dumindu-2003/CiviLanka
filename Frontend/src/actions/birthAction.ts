@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { birthService } from '../services/birthService';
 import type { SignOffCredentials } from '../types/auth';
-import type { BirthApplicationPayload, BirthStatus } from '../types/birth';
+import type { BirthApplicationPayload } from '../types/birth';
 
 export const loadBirthApplications = createAsyncThunk(
   'birth/loadApplications',
@@ -24,8 +24,8 @@ export const createBirthApplication = createAsyncThunk(
 
 export const updateBirthApplication = createAsyncThunk(
   'birth/updateApplication',
-  (arg: { id: string; payload: BirthApplicationPayload; status: BirthStatus }) =>
-    birthService.update(arg.id, arg.payload, arg.status),
+  (arg: { id: string; payload: BirthApplicationPayload }) =>
+    birthService.update(arg.id, arg.payload),
 );
 
 export const submitBirthApplication = createAsyncThunk(

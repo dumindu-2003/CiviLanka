@@ -13,32 +13,7 @@ import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
 import type { SignOffCredentials } from "../../types/auth";
 import type { BirthApplicationPayload } from "../../types/birth";
 
-type FormData = {
-  applicantName: string;
-  applicantNic: string;
-  applicantDob: string;
-  applicantAddress: string;
-
-  babyName: string;
-  birthDate: string;
-  birthTime: string;
-  birthPlace: string;
-  gender: "Male" | "Female";
-  birthWeight: string;
-
-  fatherName: string;
-  fatherNic: string;
-  fatherOccupation: string;
-  fatherAddress: string;
-
-  motherName: string;
-  motherNic: string;
-  motherOccupation: string;
-  motherAddress: string;
-
-  medicalOfficer: string;
-  registrationDate: string;
-};
+type FormData = BirthApplicationPayload;
 
 type ApplicationFormProps = {
   onBack: () => void;
@@ -63,15 +38,11 @@ export default function BirthApplicationForm({
   const [showSignOff, setShowSignOff] = useState(false);
 
   const [form, setForm] = useState<FormData>(initialData ?? {
-    applicantName: "",
-    applicantNic: "",
-    applicantDob: "",
-    applicantAddress: "",
     babyName: "",
     birthDate: "",
     birthTime: "",
     birthPlace: "",
-    gender: "Male",
+    gender: "",
     birthWeight: "",
     fatherName: "",
     fatherNic: "",
@@ -81,7 +52,7 @@ export default function BirthApplicationForm({
     motherNic: "",
     motherOccupation: "",
     motherAddress: "",
-    medicalOfficer: "",
+    hospitalName: "",
     registrationDate: "",
   });
 
@@ -216,7 +187,7 @@ export default function BirthApplicationForm({
 
         <View className="mt-2 flex-row justify-between">
           <ProgressItem
-            title="Applicant & Baby"
+            title="Birth Details"
             active={step === 1}
             completed={step > 1}
           />
@@ -361,89 +332,11 @@ function StepOne({
     <View>
       <StepHeading
         step="1"
-        title="Applicant & Baby"
+        title="Birth Details"
         percentage="33% Completed"
       />
 
-      {/* REGISTRATION STREAM */}
-
-      <FormCard title="Registration Stream">
-        <FieldLabel
-          label="Selected Certificate"
-        />
-
-        <View className="h-[42px] flex-row items-center justify-between rounded-md border border-[#D9DEE5] bg-[#F7F8FA] px-3">
-          <Text
-            numberOfLines={2}
-            className="flex-1 text-[9px] text-[#30343B]"
-          >
-            Birth Certificate (Standard Official Registration)
-          </Text>
-
-          <Text className="ml-2 text-[14px] text-[#344563]">
-            ⌄
-          </Text>
-        </View>
-      </FormCard>
-
       {/* APPLICANT */}
-
-      <FormCard title="Applicant's Personal Details">
-        <Text className="mb-3 text-[8px] text-[#777F8B]">
-          Person lodging this formal birth
-          registration
-        </Text>
-
-        <InputField
-          label="Full Legal Name"
-          rightLabel="As per NIC"
-          value={form.applicantName}
-          onChangeText={(value) =>
-            updateField(
-              "applicantName",
-              value
-            )
-          }
-          required
-        />
-
-        <InputField
-          label="National Identity Card (NIC)"
-          rightLabel="12 digits format"
-          value={form.applicantNic}
-          onChangeText={(value) =>
-            updateField(
-              "applicantNic",
-              value
-            )
-          }
-          keyboardType="numeric"
-          required
-        />
-
-        <InputField
-          label="Date of Birth"
-          value={form.applicantDob}
-          onChangeText={(value) =>
-            updateField(
-              "applicantDob",
-              value
-            )
-          }
-        />
-
-        <InputField
-          label="Residential Address"
-          value={form.applicantAddress}
-          onChangeText={(value) =>
-            updateField(
-              "applicantAddress",
-              value
-            )
-          }
-          multiline
-        />
-      </FormCard>
 
       {/* BABY */}
 
@@ -720,11 +613,11 @@ function StepTwo({
         badge="Part C"
       >
         <InputField
-          label="Hospital / Medical Officer"
-          value={form.medicalOfficer}
+          label="Hospital Name"
+          value={form.hospitalName}
           onChangeText={(value) =>
             updateField(
-              "medicalOfficer",
+              "hospitalName",
               value
             )
           }
@@ -772,28 +665,8 @@ function StepThree({
 
       <FormCard title="Registration Summary">
         <ReviewRow
-          label="Selected Certificate"
-          value="Birth Certificate (Standard Official Registration)"
-        />
-
-        <ReviewRow
-          label="Applicant Name"
-          value={form.applicantName}
-        />
-
-        <ReviewRow
-          label="Applicant NIC"
-          value={form.applicantNic}
-        />
-
-        <ReviewRow
-          label="Applicant Date of Birth"
-          value={form.applicantDob}
-        />
-
-        <ReviewRow
-          label="Applicant Address"
-          value={form.applicantAddress}
+          label="Registration Date"
+          value={form.registrationDate}
         />
       </FormCard>
 
@@ -870,6 +743,17 @@ function StepThree({
         <ReviewRow
           label="Address"
           value={form.motherAddress}
+        />
+      </FormCard>
+
+      <FormCard title="Registration Details">
+        <ReviewRow
+          label="Hospital Name"
+          value={form.hospitalName}
+        />
+        <ReviewRow
+          label="Registration Date"
+          value={form.registrationDate}
         />
       </FormCard>
 
