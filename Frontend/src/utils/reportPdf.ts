@@ -1,5 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { File, Paths } from 'expo-file-system';
 
 export interface PdfReport {
   report_id?: number;
@@ -98,12 +99,29 @@ const buildHtml = (r: PdfReport, cats: PdfCategory[] | null, generatedBy: string
 };
 
 /** Builds the PDF and opens the phone's share sheet (Save to Drive / Files / WhatsApp / Print ...). */
+/** Builds the PDF and opens the phone's share sheet (Save to Drive / Files / WhatsApp / Print ...). */
+/** Builds the PDF and opens the phone's share sheet (Save to Drive / Files / WhatsApp / Print ...). */
 export async function downloadReportPdf(report: PdfReport, byCategory: PdfCategory[] | null, generatedBy: string) {
-  const { uri } = await Print.printToFileAsync({ html: buildHtml(report, byCategory, generatedBy), width: 595, height: 842 });
+  // Ask for the PDF as base64 so we never have to read the file expo-print wrote.
+  const { base64 } = await Print.printToFileAsync({
+    html: buildHtml(report, byCategory, generatedBy),
+    width: 595,
+    height: 842,
+    base64: true,
+  });
+  if (!base64) throw new Error('The PDF could not be created.');
+
+  // Write our own copy into the app cache folder (readable by the share sheet).
+  const safeType = String(report.report_type).replace(/[^A-Za-z0-9]+/g, '_');
+  const name = `CiviLanka_${safeType}_${day(report.from_date)}_to_${day(report.to_date)}.pdf`;
+  const target = new File(Paths.cache, name);
+  target.create({ overwrite: true });
+  target.write(Uint8Array.from(atob(base64), (ch) => ch.charCodeAt(0)));
+
   if (!(await Sharing.isAvailableAsync())) {
     throw new Error('Saving or sharing files is not available on this device.');
   }
-  await Sharing.shareAsync(uri, {
+  await Sharing.shareAsync(target.uri, {
     mimeType: 'application/pdf',
     UTI: 'com.adobe.pdf',
     dialogTitle: `Report ${report.report_type} ${day(report.from_date)} to ${day(report.to_date)}`,
