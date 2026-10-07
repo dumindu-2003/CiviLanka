@@ -3,6 +3,8 @@ import type { ComponentType } from 'react';
 import { Text, View } from 'react-native';
 import DistrictDashboardScreen from '../screens/district/DistrictDashboardScreen';
 import ReportsScreen from '../screens/district/ReportsScreen';
+import AuditTrailScreen from '../screens/district/AuditTrailScreen';
+import AddProfileScreen from '../screens/district/AddProfileScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
 import NicApplicationReviewScreen from '../screens/district/NicApplicationReviewScreen';
 // Other developers: import your screens here
@@ -23,8 +25,10 @@ export const stackScreens: Record<
   { component: ComponentType<any>; title: string; headerShown?: boolean }
 > = {
   Reports: { component: ReportsScreen, title: 'Reports' },
+  AuditTrail: { component: AuditTrailScreen, title: 'Audit Trail' },
+  AddProfile: { component: AddProfileScreen, title: 'Add Profile', headerShown: false },
   NicPendingList: { component: NicPendingListScreen, title: 'NIC Pending Applications', headerShown: false },
-   NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review', headerShown: false },
+  NicApplicationReview: { component: NicApplicationReviewScreen, title: 'NIC Application Review', headerShown: false },
 };
 
 // Shown when the backend sends a key the app does not know (prevents a crash)

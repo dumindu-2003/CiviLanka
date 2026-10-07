@@ -27,7 +27,7 @@ const STATUS_TONE: Record<Status, string> = {
 const ACTIONS: { label: string; icon: IconName; route?: keyof RootStackParamList; tab?: string }[] = [
   { label: 'View All Records', icon: 'grid-outline' },
   { label: 'Generate Report', icon: 'document-text-outline', route: 'Reports' },
-  { label: 'Audit Trail', icon: 'time-outline' },
+  { label: 'Audit Trail', icon: 'time-outline', route: 'AuditTrail' },
   { label: 'Add Profile', icon: 'person-add-outline', route: 'AddProfile' },
   { label: 'View Profile', icon: 'person-circle-outline', tab: 'Profile' },
   { label: 'NIC Request', icon: 'id-card-outline', route: 'NicPendingList' },
