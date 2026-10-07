@@ -4,8 +4,12 @@ export type RootStackParamList = {
   MainTabs: undefined;
   AddProfile: undefined;
   Reports: undefined;
+  AuditTrail: undefined;
   NicPendingList: undefined;
   NicApplicationReview: { applicationId: string };
+
+};
   BirthDashboard: undefined;
   DeathDashboard: undefined;
 };
+
