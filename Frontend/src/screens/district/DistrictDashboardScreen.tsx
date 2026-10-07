@@ -24,6 +24,7 @@ const STATUS_TONE: Record<Status, string> = {
 };
 
 // Bottom action buttons. `route` = stack screen, `tab` = bottom tab. No target = "not available yet".
+<<<<<<< HEAD
 const ACTIONS: {
   label: string;
   icon: IconName;
@@ -71,6 +72,15 @@ const ACTIONS: {
     icon: 'id-card-outline',
     route: 'NicPendingList',
   },
+=======
+const ACTIONS: { label: string; icon: IconName; route?: keyof RootStackParamList; tab?: string }[] = [
+  { label: 'View All Records', icon: 'grid-outline' },
+  { label: 'Generate Report', icon: 'document-text-outline', route: 'Reports' },
+  { label: 'Audit Trail', icon: 'time-outline', route: 'AuditTrail' },
+  { label: 'Add Profile', icon: 'person-add-outline', route: 'AddProfile' },
+  { label: 'View Profile', icon: 'person-circle-outline', tab: 'Profile' },
+  { label: 'NIC Request', icon: 'id-card-outline', route: 'NicPendingList' },
+>>>>>>> 74380a1f1690c3b61a3d5836430bed390a595505
 ];
 
 function StatCard({ label, value, note, icon }: { label: string; value: number | string; note: string; icon: IconName }) {
