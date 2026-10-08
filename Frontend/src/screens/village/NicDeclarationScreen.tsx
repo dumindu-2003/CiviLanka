@@ -50,7 +50,10 @@ export default function NicDeclarationScreen() {
     if (!serviceNo.trim()) next.serviceNo = 'Enter the service or cadre number.';
     if (!/^\d{6,}$/.test(password)) next.password = 'Enter a PIN of at least 6 digits.';
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
+    if (Object.keys(next).length > 0) {
+      Alert.alert('Check the sign-off', 'Enter the officer username, service number, and a PIN of at least 6 digits.');
+      return;
+    }
     if (saving.current) return;
     saving.current = true;
     try {

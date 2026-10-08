@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import DobCalendar from '../../components/enroll/DobCalendar';
 import { DISTRICTS } from '../../components/enroll/formParts';
 import { rememberNicPersonal, saveNicFormDraft } from '../../services/nicFormSync';
 import type { RootStackParamList } from '../../navigation/types';
@@ -56,13 +57,6 @@ export function clearNicPersonalDraft() {
   savedDraft = null;
 }
 
-function formatDob(input: string) {
-  const digits = input.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
 function isValidDob(value: string) {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
   if (!match) return false;
@@ -81,14 +75,19 @@ function isValidDob(value: string) {
   );
 }
 
+function hasText(value: string, min: number) {
+  const text = value.trim();
+  return text.length >= min && !/^\d+$/.test(text);
+}
+
 function validate(form: PersonalDetails) {
   const errors: Partial<Record<keyof PersonalDetails, string>> = {};
-  if (!form.fullName.trim()) errors.fullName = 'Enter the applicant’s full name.';
-  if (!isValidDob(form.dob)) errors.dob = 'Enter a valid date as DD/MM/YYYY.';
-  if (!form.placeOfBirth.trim()) errors.placeOfBirth = 'Enter the place of birth.';
+  if (!hasText(form.fullName, 3)) errors.fullName = 'Enter the applicant’s full name.';
+  if (!isValidDob(form.dob)) errors.dob = 'Select the date of birth from the calendar.';
+  if (!hasText(form.placeOfBirth, 2)) errors.placeOfBirth = 'Enter the place of birth.';
   if (!form.district) errors.district = 'Select a district.';
   if (!form.religion) errors.religion = 'Select a religion.';
-  if (!form.occupation.trim()) errors.occupation = 'Enter the occupation.';
+  if (!hasText(form.occupation, 2)) errors.occupation = 'Enter the occupation.';
   return errors;
 }
 
@@ -192,6 +191,7 @@ export default function NicPersonalDetailsScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [form, setForm] = useState<PersonalDetails>(savedDraft ?? EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof PersonalDetails, string>>>({});
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const saving = useRef(false);
 
   const set = <K extends keyof PersonalDetails>(key: K, value: PersonalDetails[K]) => {
@@ -223,7 +223,10 @@ export default function NicPersonalDetailsScreen() {
   const continueNext = async () => {
     const nextErrors = validate(form);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      Alert.alert('Check the form', 'Fill every required field before continuing.');
+      return;
+    }
     if (saving.current) return;
     saving.current = true;
     savedDraft = { ...form };
@@ -278,24 +281,33 @@ export default function NicPersonalDetailsScreen() {
           </View>
 
           <TextField
-            label="FULL NAME"
+            label="FULL NAME *"
             value={form.fullName}
             onChangeText={(v) => set('fullName', v)}
             placeholder="Enter your full name"
             error={errors.fullName}
           />
-          <TextField
-            label="DATE OF BIRTH"
-            value={form.dob}
-            onChangeText={(v) => set('dob', formatDob(v))}
-            placeholder="DD/MM/YYYY"
-            error={errors.dob}
-            keyboardType="number-pad"
-            right={<Ionicons name="calendar-outline" size={18} color={colors.navy} />}
-          />
+          <View>
+            <FieldLabel>DATE OF BIRTH *</FieldLabel>
+            <Pressable
+              onPress={() => setCalendarOpen(true)}
+              accessibilityRole="button"
+              style={[styles.inputBox, errors.dob ? styles.inputError : null]}
+            >
+              <Text style={[styles.input, styles.selectText, !form.dob && styles.placeholder]}>{form.dob || 'Select date of birth'}</Text>
+              <Ionicons name="calendar-outline" size={18} color={colors.navy} />
+            </Pressable>
+            {errors.dob ? <Text style={styles.error}>{errors.dob}</Text> : null}
+            <DobCalendar
+              visible={calendarOpen}
+              value={form.dob}
+              onClose={() => setCalendarOpen(false)}
+              onSelect={(value) => set('dob', value)}
+            />
+          </View>
 
           <View>
-            <FieldLabel>GENDER</FieldLabel>
+            <FieldLabel>GENDER *</FieldLabel>
             <View style={styles.genders}>
               {GENDERS.map((gender) => {
                 const selected = form.gender === gender;
@@ -318,14 +330,14 @@ export default function NicPersonalDetailsScreen() {
           </View>
 
           <TextField
-            label="PLACE OF BIRTH"
+            label="PLACE OF BIRTH *"
             value={form.placeOfBirth}
             onChangeText={(v) => set('placeOfBirth', v)}
             placeholder="Enter your birth city"
             error={errors.placeOfBirth}
           />
           <SelectField
-            label="DISTRICT"
+            label="DISTRICT *"
             value={form.district}
             placeholder="Select your district"
             options={DISTRICTS}
@@ -333,7 +345,7 @@ export default function NicPersonalDetailsScreen() {
             onSelect={(v) => set('district', v)}
           />
           <SelectField
-            label="RELIGION"
+            label="RELIGION *"
             value={form.religion}
             placeholder="Select your religion"
             options={RELIGIONS}
@@ -341,7 +353,7 @@ export default function NicPersonalDetailsScreen() {
             onSelect={(v) => set('religion', v)}
           />
           <TextField
-            label="OCCUPATION"
+            label="OCCUPATION *"
             value={form.occupation}
             onChangeText={(v) => set('occupation', v)}
             placeholder="Enter your occupation"

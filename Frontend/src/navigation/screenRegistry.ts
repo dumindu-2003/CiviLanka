@@ -4,6 +4,8 @@ import { Text, View } from 'react-native';
 
 import DistrictDashboardScreen from '../screens/district/DistrictDashboardScreen';
 import VillageDashboardScreen from '../screens/village/VillageDashboardScreen';
+import CertificatePreviewScreen from '../screens/village/CertificatePreviewScreen';
+import CertificateDetailScreen from '../screens/village/CertificateDetailScreen';
 import ReportsScreen from '../screens/district/ReportsScreen';
 import AllRecordsScreen from '../screens/district/AllRecordsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
@@ -116,6 +118,18 @@ export const stackScreens: Record<
   AuditTrail: {
     component: AuditTrailScreen,
     title: 'Audit Trail',
+    headerShown: false,
+  },
+
+  CertificatePreview: {
+    component: CertificatePreviewScreen,
+    title: 'Certificate Preview',
+    headerShown: false,
+  },
+
+  CertificateDetail: {
+    component: CertificateDetailScreen,
+    title: 'Certificate',
     headerShown: false,
   },
 };

@@ -115,7 +115,10 @@ export default function NicDocumentsScreen() {
       if (!files[key]) next[key] = 'This document is required.';
     }
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
+    if (Object.keys(next).length > 0) {
+      Alert.alert('Check the documents', 'Birth certificate, address proof, and the passport photo are required.');
+      return;
+    }
     if (saving.current) return;
     saving.current = true;
     savedDraft = files;

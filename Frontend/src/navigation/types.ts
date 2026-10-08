@@ -18,6 +18,8 @@ export type RootStackParamList = {
 
   BirthDashboard: undefined;
   DeathDashboard: undefined;
+  CertificatePreview: { kind: 'BIRTH' | 'DEATH' | 'MARRIAGE' };
+  CertificateDetail: { kind: 'BIRTH' | 'DEATH' | 'MARRIAGE'; ref: string };
 
   FindPeople: undefined;
 };

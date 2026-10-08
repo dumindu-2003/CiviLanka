@@ -87,16 +87,28 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+function hasName(value: string) {
+  const name = value.trim();
+  return name.length >= 3 && !/^\d+$/.test(name);
+}
+
 function validate(form: ContactFamily) {
   const errors: Partial<Record<keyof ContactFamily, string>> = {};
-  if (!form.permanentAddress.trim()) errors.permanentAddress = 'Enter the permanent address.';
-  if (!form.sameAsPermanent && !form.currentAddress.trim()) errors.currentAddress = 'Enter the current address.';
+  if (form.permanentAddress.trim().length < 5) errors.permanentAddress = 'Enter the permanent address.';
+  if (!form.sameAsPermanent && form.currentAddress.trim().length < 5) errors.currentAddress = 'Enter the current address.';
   if (!isSriLankanMobile(form.phone)) errors.phone = 'Enter a Sri Lankan mobile number, like +94 77 123 4567.';
   if (!isEmail(form.email)) errors.email = 'Enter a valid email address.';
-  if (!form.fatherName.trim()) errors.fatherName = "Enter the father's full name.";
+  if (!hasName(form.fatherName)) errors.fatherName = "Enter the father's full name.";
   if (!isNic(form.fatherNic)) errors.fatherNic = 'Enter a NIC as 196812345678 or 651234567V.';
-  if (!form.motherName.trim()) errors.motherName = "Enter the mother's full name.";
+  if (!hasName(form.motherName)) errors.motherName = "Enter the mother's full name.";
   if (!isNic(form.motherNic)) errors.motherNic = 'Enter a NIC as 196812345678 or 681234567V.';
+  if (
+    isNic(form.fatherNic) &&
+    isNic(form.motherNic) &&
+    form.fatherNic.trim().toUpperCase() === form.motherNic.trim().toUpperCase()
+  ) {
+    errors.motherNic = "Mother's NIC must be different from the father's NIC.";
+  }
   if (!form.maritalStatus) errors.maritalStatus = 'Select a marital status.';
   return errors;
 }
@@ -179,7 +191,10 @@ export default function NicContactFamilyScreen() {
   const continueNext = async () => {
     const nextErrors = validate(form);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      Alert.alert('Check the form', 'Fill every required field before continuing.');
+      return;
+    }
     if (saving.current) return;
     saving.current = true;
     savedDraft = { ...form };

@@ -13,6 +13,8 @@ const VILLAGE_FORM_SCREENS = [
   'NicDocuments',
   'NicDeclaration',
   'NicReceipt',
+  'CertificatePreview',
+  'CertificateDetail',
 ];
 
 const VILLAGE_DEMO: LoginResult = {
