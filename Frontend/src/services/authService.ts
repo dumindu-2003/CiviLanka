@@ -5,6 +5,55 @@ import type { LoginPayload, LoginResult } from '../types/auth';
 
 // Used by: LoginScreen (via actions/authAction.ts)
 
+const VILLAGE_HOME = 'VillageDashboard';
+
+const VILLAGE_FORM_SCREENS = [
+  'NicPersonalDetails',
+  'NicContactFamily',
+  'NicDocuments',
+  'NicDeclaration',
+  'NicReceipt',
+  'CertificatePreview',
+  'CertificateDetail',
+];
+
+const VILLAGE_DEMO: LoginResult = {
+  token: 'demo-token-village',
+  user: {
+    id: '2',
+    fullName: 'K. M. Bandara',
+    serviceNo: 'VO-2024-8841',
+    designation: 'Village Officer',
+    role: 'VILLAGE_OFFICER',
+    department: 'Grama Niladhari',
+    officeLocation: 'Colombo',
+  },
+  homeScreen: VILLAGE_HOME,
+  allowedScreens: VILLAGE_FORM_SCREENS,
+};
+
+function looksLikeVillage(value: string) {
+  return /village|grama|niladhari/.test(value.toLowerCase()) || /\bvo\b/i.test(value);
+}
+
+function homeForOfficer(homeScreen: string, role: string, designation: string) {
+  if (homeScreen === VILLAGE_HOME || looksLikeVillage(`${role} ${designation} ${homeScreen}`)) return VILLAGE_HOME;
+  return homeScreen;
+}
+
+function screensFor(homeScreen: string, screens: string[]) {
+  if (homeScreen !== VILLAGE_HOME) return screens;
+  const next = [...screens];
+  for (const key of VILLAGE_FORM_SCREENS) {
+    if (!next.includes(key)) next.push(key);
+  }
+  return next;
+}
+
+function isVillageLogin(p: LoginPayload) {
+  return looksLikeVillage(`${p.username} ${p.serviceNo}`);
+}
+
 // ── SIGN IN ────────────────────────────────────────────────────────────────
 // POST /api/auth/Login
 // body     : { username, service_number, password }
@@ -30,25 +79,28 @@ interface LoginResponse {
 export const loginOfficer = async (p: LoginPayload): Promise<LoginResult> => {
   if (DEMO_MODE) {
     await wait();
-    return DEMO_LOGIN;
+    return isVillageLogin(p) ? VILLAGE_DEMO : DEMO_LOGIN;
   }
   const r = await apiClient.post<LoginResponse>('/api/auth/Login', {
     username: p.username,
     service_number: p.serviceNo,
     password: p.password,
   });
+  const role = r.officer.role_code;
+  const designation = r.officer.role_name;
+  const homeScreen = homeForOfficer(r.home_screen, role, designation);
   return {
     token: r.token,
     user: {
       id: String(r.officer.officer_id),
       fullName: r.officer.officer_name ?? r.officer.username,
       serviceNo: r.officer.service_number,
-      designation: r.officer.role_name,
-      role: r.officer.role_code,
+      designation,
+      role,
       officeLocation: r.officer.unit_name ?? undefined,
     },
-    homeScreen: r.home_screen,
-    allowedScreens: r.allowed_screens,
+    homeScreen,
+    allowedScreens: screensFor(homeScreen, r.allowed_screens),
   };
 };
 

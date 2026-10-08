@@ -1,5 +1,7 @@
+from typing import Optional
+
 from Models.RequestApiModels.OfficerRequestAPI import OfficerRequestAPI
 
 
 class VillageRequestAPI(OfficerRequestAPI):
-    pass
+    category: Optional[str] = None

@@ -17,3 +17,9 @@ def GetVillage() -> IVillage:
 def Dashboard(requestAPI: VillageRequestAPI = Depends(), officer: CurrentOfficer = Depends(GetCurrentOfficer), _Village: IVillage = Depends(GetVillage)):
     requestAPI.acting_officer_id = officer.officer_id          # from the JWT, never from the client
     return _Village.Dashboard(requestAPI)
+
+
+@router.get("/Certificates", response_model=Response)
+def Certificates(requestAPI: VillageRequestAPI = Depends(), officer: CurrentOfficer = Depends(GetCurrentOfficer), _Village: IVillage = Depends(GetVillage)):
+    requestAPI.acting_officer_id = officer.officer_id
+    return _Village.Preview(requestAPI)

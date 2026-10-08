@@ -98,6 +98,7 @@ class ApplicationAction:     # sp_birth, sp_death, sp_marriage, sp_nic (NIC has 
 
 class VillageAction:         # sp_village
     DASHBOARD = 1
+    PREVIEW = 2
 
 
 class BankAction:            # sp_bank

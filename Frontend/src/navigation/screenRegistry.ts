@@ -3,24 +3,30 @@ import type { ComponentType } from 'react';
 import { Text, View } from 'react-native';
 
 import DistrictDashboardScreen from '../screens/district/DistrictDashboardScreen';
+import VillageDashboardScreen from '../screens/village/VillageDashboardScreen';
+import CertificatePreviewScreen from '../screens/village/CertificatePreviewScreen';
+import CertificateDetailScreen from '../screens/village/CertificateDetailScreen';
 import ReportsScreen from '../screens/district/ReportsScreen';
 import AllRecordsScreen from '../screens/district/AllRecordsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
 import NicApplicationReviewScreen from '../screens/district/NicApplicationReviewScreen';
+import NicPersonalDetailsScreen from '../screens/village/NicPersonalDetailsScreen';
+import NicContactFamilyScreen from '../screens/village/NicContactFamilyScreen';
+import NicDocumentsScreen from '../screens/village/NicDocumentsScreen';
+import NicDeclarationScreen from '../screens/village/NicDeclarationScreen';
+import NicReceiptScreen from '../screens/village/NicReceiptScreen';
 import AddProfileScreen from '../screens/district/AddProfileScreen';
-import FindPeopleScreen from '@/screens/district/Findpeoplescreen';
+import FindPeopleScreen from '../screens/district/Findpeoplescreen';
 import AuditTrailScreen from '../screens/district/AuditTrailScreen';
 
 import BirthTestScreen from '../screens/birth/BirthTestScreen';
 import DeathTestScreen from '../screens/death/DeathTestScreen';
 
-export const dashboards: Record<
-  string,
-  ComponentType<any>
-> = {
+export const dashboards: Record<string, ComponentType<any>> = {
   DistrictDashboard: DistrictDashboardScreen,
   BirthDashboard: BirthTestScreen,
   DeathDashboard: DeathTestScreen,
+  VillageDashboard: VillageDashboardScreen,
 };
 
 export const stackScreens: Record<
@@ -61,6 +67,36 @@ export const stackScreens: Record<
     headerShown: false,
   },
 
+  NicPersonalDetails: {
+    component: NicPersonalDetailsScreen,
+    title: 'Personal Details',
+    headerShown: false,
+  },
+
+  NicContactFamily: {
+    component: NicContactFamilyScreen,
+    title: 'Residential Address',
+    headerShown: false,
+  },
+
+  NicDocuments: {
+    component: NicDocumentsScreen,
+    title: 'Supporting Documents',
+    headerShown: false,
+  },
+
+  NicDeclaration: {
+    component: NicDeclarationScreen,
+    title: 'Review And Declaration',
+    headerShown: false,
+  },
+
+  NicReceipt: {
+    component: NicReceiptScreen,
+    title: 'Application Receipt',
+    headerShown: false,
+  },
+
   NicApplicationReview: {
     component: NicApplicationReviewScreen,
     title: 'NIC Application Review',
@@ -82,6 +118,18 @@ export const stackScreens: Record<
   AuditTrail: {
     component: AuditTrailScreen,
     title: 'Audit Trail',
+    headerShown: false,
+  },
+
+  CertificatePreview: {
+    component: CertificatePreviewScreen,
+    title: 'Certificate Preview',
+    headerShown: false,
+  },
+
+  CertificateDetail: {
+    component: CertificateDetailScreen,
+    title: 'Certificate',
     headerShown: false,
   },
 };

@@ -11,3 +11,6 @@ class DAVillage(DABase, IVillage):
 
     def Dashboard(self, requestAPI: VillageRequestAPI) -> Response:
         return self._Execute(requestAPI, VillageAction.DASHBOARD, "Dashboard", sets=[('recentCertificates', 'rows'), ('myPendingNic', 'row')])
+
+    def Preview(self, requestAPI: VillageRequestAPI) -> Response:
+        return self._Execute(requestAPI, VillageAction.PREVIEW, "Preview", "rows")

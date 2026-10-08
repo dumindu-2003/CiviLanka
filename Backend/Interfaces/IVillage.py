@@ -7,3 +7,6 @@ from Models.Response import Response
 class IVillage(ABC):
     @abstractmethod
     def Dashboard(self, requestAPI: VillageRequestAPI) -> Response: ...
+
+    @abstractmethod
+    def Preview(self, requestAPI: VillageRequestAPI) -> Response: ...
