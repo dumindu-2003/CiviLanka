@@ -7,7 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { EnrollForm, HeaderCfg, IconName, initialForm, SetFn, StepHeader } from '../../components/enroll/formParts';
-import { StepContact, StepPersonal, StepReview, StepRole, StepSecurity, validate } from './addProfile/steps';
+import { isoDob, StepContact, StepPersonal, StepReview, StepRole, StepSecurity, validate } from './addProfile/steps';
+import { createOfficer } from '../../services/districtService';
 import { colors } from '../../theme/colors';
 
 const CFG: HeaderCfg[] = [
@@ -146,17 +147,32 @@ export default function AddProfileScreen() {
     return () => sub.remove();
   });
 
-  const authorize = async (_c: { serviceNo: string; username: string; password: string }) => {
+  const authorize = async (c: { serviceNo: string; username: string; password: string }) => {
     setBusy(true);
     try {
-      // TODO: call the backend here when the endpoint is ready, e.g. districtService.createOfficer(form, _c)
-      await new Promise((r) => setTimeout(r, 900));
+      await createOfficer(
+        {
+          username: form.govEmail.trim().split('@')[0].toLowerCase(), // the form has no username field: the official email name is used
+          password: form.password,
+          service_number: form.cadreNo.trim().toUpperCase(),
+          role_name: form.role,
+          officer_name: form.fullName.trim(),
+          officer_phone: form.phone.replace(/\s/g, ''),
+          unit_name: form.district,
+          nic: form.nic.trim().toUpperCase(),
+          date_of_birth: isoDob(form.dob),
+          gender: form.gender,
+          email: form.email.trim(),
+          address: form.address.trim(),
+        },
+        { officerUserName: c.username, authorizingServiceNo: c.serviceNo, officerPassword: c.password },
+      );
       setModal(false);
-      Alert.alert('Submitted for sign-off', `Officer enrollment for ${form.fullName} was submitted successfully.`, [
+      Alert.alert('Officer profile created', `The profile of ${form.fullName} was saved successfully.`, [
         { text: 'OK', onPress: () => nav.goBack() },
       ]);
     } catch (e: any) {
-      Alert.alert('Not authorized', e?.message ?? 'Sign-off failed');
+      Alert.alert('Could not submit', e?.message ?? 'Sign-off failed');
     } finally {
       setBusy(false);
     }

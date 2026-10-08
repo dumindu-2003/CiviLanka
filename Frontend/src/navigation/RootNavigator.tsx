@@ -11,7 +11,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const user = useAppSelector((s) => s.auth.user);
-  const allowedScreens = useAppSelector((s) => s.auth.allowedScreens);
 
   if (!user) {
     return (
@@ -22,25 +21,20 @@ export default function RootNavigator() {
     );
   }
 
-  // Only screens allowed by the backend are registered
-  const screens = [...new Set([...allowedScreens, 'MarriageRegistrationStep1', 'MarriageRegistrationStep2'])];
-
   return (
     <Stack.Navigator>
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-      {screens
-        .filter((key) => stackScreens[key])
-        .map((key) => (
-          <Stack.Screen
-            key={key}
-            name={key as keyof RootStackParamList}
-            component={stackScreens[key].component}
-            options={{
-              title: stackScreens[key].title,
-              headerShown: stackScreens[key].headerShown ?? true,
-            }}
-          />
-        ))}
+      {Object.entries(stackScreens).map(([key, screen]) => (
+        <Stack.Screen
+          key={key}
+          name={key as keyof RootStackParamList}
+          component={screen.component}
+          options={{
+            title: screen.title,
+            headerShown: screen.headerShown ?? true,
+          }}
+        />
+      ))}
     </Stack.Navigator>
   );
 }

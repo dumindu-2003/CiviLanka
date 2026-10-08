@@ -12,8 +12,8 @@ class ApplicationRequestAPI(OfficerRequestAPI):
 
 class ApplicationSaveRequestAPI(SignoffRequestAPI):
     """Create / Update / Submit / Delete.
-    status = 'Draft' | 'Pending' on Create ('Pending' and Submit need the sign-off officer's credentials).
-    data keys = application column names, e.g. {"applicant_id":5,"baby_full_name":"..","date_of_birth":"2026-09-01"}"""
+    Application primary keys and audit columns are database-managed.
+    Birth/death data keys are validated against their table columns by the matching data-access class."""
     app_id: Optional[int] = None
     status: Optional[str] = None
     data: Optional[Dict[str, Any]] = None

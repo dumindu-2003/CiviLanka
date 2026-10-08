@@ -2,12 +2,24 @@ export type RootStackParamList = {
   Landing: undefined;
   Login: undefined;
   MainTabs: undefined;
+
   AddProfile: undefined;
-  // District
   Reports: undefined;
+
+  AllRecords: undefined;
+  AuditTrail: undefined;
+
   NicPendingList: undefined;
-  NicApplicationReview: { applicationId: string };
+
+  NicApplicationReview: {
+    applicationId: string;
+  };
+
+  BirthDashboard: undefined;
+  DeathDashboard: undefined;
+
+  FindPeople: undefined;
+
   MarriageRegistrationStep1: undefined;
   MarriageRegistrationStep2: undefined;
-  // Other developers: add your route names here
 };

@@ -3,48 +3,47 @@ import { tokenStorage } from './tokenStorage';
 
 // Used by: MyProfileScreen (Profile tab)
 
-// ── MY PROFILE ─────────────────────────────────────────────────────────────
-// GET /api/profile/Get
-// returns : name / phone / unit / role of the logged-in officer.
-// NOTE: the DB has NO nic / dateOfBirth / gender / email / address / employeeId for officers,
-//       so those rows of MyProfileScreen stay "-" until the backend adds them.
+// GET /api/profile/Get  -> the logged-in officer (officer table + linked citizen row)
 export interface OfficerProfile {
   officer_id: number;
   username: string;
   service_number: string;
+  employee_id: string;
   officer_name: string | null;
   officer_phone: string | null;
-  unit_name: string | null; // district / division / service area / department
+  unit_name: string | null; // office location (district / division / service area)
+  department: string | null;
   role_code: string;
   role_name: string;
   last_login_at: string | null;
+  citizen_id: number | null;
+  nic: string | null;
+  date_of_birth: string | null; // YYYY-MM-DD
+  gender: string | null;
+  email: string | null;
+  address: string | null;
+  has_photo: boolean;
 }
 export const getMyProfile = () => apiClient.get<OfficerProfile>('/api/profile/Get');
 
-// ── EDIT CONTACT (pencil icon) ─────────────────────────────────────────────
-// POST /api/profile/UpdateContact
-// body : { officer_name, officer_phone }
-export const updateMyContact = (officerName: string, officerPhone: string) =>
-  apiClient.post<{ officer_id: number }>('/api/profile/UpdateContact', {
-    officer_name: officerName,
-    officer_phone: officerPhone,
-  });
+// POST /api/profile/UpdateContact  (pencil icon). NIC cannot be changed.
+export interface ProfileEdit {
+  officer_name: string;
+  officer_phone: string;
+  email: string;
+  address: string;
+  gender?: string;
+  date_of_birth?: string; // YYYY-MM-DD
+}
+export const updateMyProfile = (p: ProfileEdit) =>
+  apiClient.post<{ officer_id: number }>('/api/profile/UpdateContact', p);
 
-// ── PROFILE PHOTO ("CHANGE PHOTO") ─────────────────────────────────────────
-// POST /api/profile/PhotoUpload      multipart, field "file", JPG / PNG / WEBP, max 2 MB
-// file = { uri, name, type } straight from expo-image-picker
+// POST /api/profile/PhotoUpload  multipart, field "file"  (JPG / PNG / WEBP, max 2 MB)
 export const uploadProfilePhoto = (file: { uri: string; name: string; type: string }) =>
   apiClient.upload<{ photo_id: number; file_name: string; url: string }>('/api/profile/PhotoUpload', file);
 
-// GET /api/profile/PhotoGet          -> details of the current photo (null = no photo)
-export const getProfilePhotoInfo = () =>
-  apiClient.get<{ photo_id: number; original_file_name: string; content_type: string; file_size_bytes: number } | null>(
-    '/api/profile/PhotoGet',
-  );
-
-// GET /api/profile/PhotoFile         -> the image itself (needs the token, so the header is added here)
-// usage : const source = await getProfilePhotoSource();   <Image source={source} />
-export const getProfilePhotoSource = async () => {
+// GET /api/profile/PhotoFile -> the image itself (needs the token, so the header is added here)
+export const getProfilePhotoSource = async (): Promise<{ uri: string; headers: Record<string, string> }> => {
   const token = await tokenStorage.get();
   return {
     uri: `${API_BASE_URL}/api/profile/PhotoFile?t=${Date.now()}`, // t = skip the image cache after a new upload

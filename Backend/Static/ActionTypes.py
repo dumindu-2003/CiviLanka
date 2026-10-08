@@ -82,6 +82,8 @@ class DistrictAction:        # sp_district
     REPORT_GENERATE = 7
     REPORT_LIST = 8
     REPORT_TREND = 9
+    OFFICER_CREATE = 10      # Add Profile (District Registrar enrolls an officer)
+    FIND_PERSON = 11         # Find People (NIC or service number)
 
 
 class ApplicationAction:     # sp_birth, sp_death, sp_marriage, sp_nic (NIC has no DASHBOARD)
