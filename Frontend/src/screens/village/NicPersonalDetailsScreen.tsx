@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DISTRICTS } from '../../components/enroll/formParts';
+import { rememberNicPersonal, saveNicFormDraft } from '../../services/nicFormSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/colors';
 
@@ -191,6 +192,7 @@ export default function NicPersonalDetailsScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [form, setForm] = useState<PersonalDetails>(savedDraft ?? EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof PersonalDetails, string>>>({});
+  const saving = useRef(false);
 
   const set = <K extends keyof PersonalDetails>(key: K, value: PersonalDetails[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -199,17 +201,41 @@ export default function NicPersonalDetailsScreen() {
 
   const openProfile = () => nav.navigate('MainTabs', { screen: 'Profile' });
 
-  const saveDraft = () => {
+  const saveDraft = async () => {
     savedDraft = { ...form };
-    Alert.alert('Draft saved', 'Personal details are kept for this session.');
+    rememberNicPersonal(savedDraft);
+    if (!form.fullName.trim()) {
+      Alert.alert('Draft saved', 'Enter the full name to write this application to the register.');
+      return;
+    }
+    if (saving.current) return;
+    saving.current = true;
+    try {
+      await saveNicFormDraft();
+      Alert.alert('Draft saved', 'Personal details were written to the NIC application register.');
+    } catch (error) {
+      Alert.alert('Could not save', error instanceof Error ? error.message : 'The application was not saved.');
+    } finally {
+      saving.current = false;
+    }
   };
 
-  const continueNext = () => {
+  const continueNext = async () => {
     const nextErrors = validate(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
+    if (saving.current) return;
+    saving.current = true;
     savedDraft = { ...form };
-    nav.navigate('NicContactFamily');
+    rememberNicPersonal(savedDraft);
+    try {
+      await saveNicFormDraft();
+      nav.navigate('NicContactFamily');
+    } catch (error) {
+      Alert.alert('Could not save', error instanceof Error ? error.message : 'The application was not saved.');
+    } finally {
+      saving.current = false;
+    }
   };
 
   return (

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
-from Models.RequestApiModels.DistrictRequestAPI import DistrictRequestAPI, DistrictDecisionRequestAPI
+from Models.RequestApiModels.DistrictRequestAPI import (
+    DistrictDecisionRequestAPI, DistrictOfficerCreateRequestAPI, DistrictRequestAPI,
+)
 from Models.Response import Response
 
 
@@ -31,3 +33,9 @@ class IDistrict(ABC):
 
     @abstractmethod
     def ReportTrend(self, requestAPI: DistrictRequestAPI) -> Response: ...
+
+    @abstractmethod
+    def OfficerCreate(self, requestAPI: DistrictOfficerCreateRequestAPI) -> Response: ...
+
+    @abstractmethod
+    def FindPerson(self, requestAPI: DistrictRequestAPI) -> Response: ...

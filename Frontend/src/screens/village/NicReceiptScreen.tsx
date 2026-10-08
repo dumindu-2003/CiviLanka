@@ -8,6 +8,7 @@ import { clearNicContactDraft } from './NicContactFamilyScreen';
 import { clearNicDocumentDraft } from './NicDocumentsScreen';
 import { clearNicAuthorization, readNicAuthorization } from './NicDeclarationScreen';
 import { clearNicPersonalDraft, readNicPersonalDraft } from './NicPersonalDetailsScreen';
+import { clearNicFormSession, readNicSavedReference } from '../../services/nicFormSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAppSelector } from '../../store/hooks';
 import { colors } from '../../theme/colors';
@@ -39,7 +40,7 @@ export default function NicReceiptScreen() {
     const when = new Date();
     const serviceNo = signed?.serviceNo || user?.serviceNo;
     return {
-      reference: referenceNo(),
+      reference: readNicSavedReference() ?? referenceNo(),
       applicant: personal?.fullName?.trim() || 'Applicant',
       officer: serviceNo ? `GN Officer ${serviceNo}` : user?.fullName || 'Grama Niladhari',
       destination: `District Registrar Office - ${personal?.district?.trim() || 'Colombo'}`,
@@ -77,6 +78,7 @@ export default function NicReceiptScreen() {
     clearNicContactDraft();
     clearNicDocumentDraft();
     clearNicAuthorization();
+    clearNicFormSession();
     nav.dispatch(
       CommonActions.reset({
         index: 1,

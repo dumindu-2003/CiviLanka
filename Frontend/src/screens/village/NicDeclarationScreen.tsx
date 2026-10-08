@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { readNicDocumentDraft } from './NicDocumentsScreen';
 import { readNicPersonalDraft } from './NicPersonalDetailsScreen';
 import type { RootStackParamList } from '../../navigation/types';
+import { readNicSavedReference, submitNicForm } from '../../services/nicFormSync';
 import { colors } from '../../theme/colors';
 
 interface Authorization {
@@ -34,24 +35,38 @@ export default function NicDeclarationScreen() {
     return {
       applicant: personal?.fullName?.trim() || 'Applicant',
       nicType: documents.previous ? 'Renewal' : 'New',
-      reference: `REF: NIC-${year}-${serial}`,
+      reference: readNicSavedReference() ?? `REF: NIC-${year}-${serial}`,
     };
   }, []);
   const [username, setUsername] = useState('');
   const [serviceNo, setServiceNo] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ username?: string; serviceNo?: string; password?: string }>({});
+  const saving = useRef(false);
 
-  const submit = () => {
+  const submit = async () => {
     const next: typeof errors = {};
     if (!username.trim()) next.username = 'Enter the officer username.';
     if (!serviceNo.trim()) next.serviceNo = 'Enter the service or cadre number.';
     if (!/^\d{6,}$/.test(password)) next.password = 'Enter a PIN of at least 6 digits.';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    savedAuthorization = { username: username.trim(), serviceNo: serviceNo.trim() };
-    setPassword('');
-    nav.navigate('NicReceipt');
+    if (saving.current) return;
+    saving.current = true;
+    try {
+      await submitNicForm({
+        officerUserName: username.trim(),
+        authorizingServiceNo: serviceNo.trim(),
+        officerPassword: password,
+      });
+      savedAuthorization = { username: username.trim(), serviceNo: serviceNo.trim() };
+      setPassword('');
+      nav.navigate('NicReceipt');
+    } catch (error) {
+      Alert.alert('Could not submit', error instanceof Error ? error.message : 'The application was not submitted.');
+    } finally {
+      saving.current = false;
+    }
   };
 
   return (

@@ -4,6 +4,7 @@ import { useAppSelector } from '../store/hooks';
 import { stackScreens } from './screenRegistry';
 import MainTabs from './MainTabs';
 import LandingScreen from '../screens/shared/LandingScreen';
+import birthdayScreen from '../screens/birth/BirthTestScreen';
 import LoginScreen from '../screens/shared/LoginScreen';
 import type { RootStackParamList } from './types';
 
@@ -26,19 +27,17 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-      {allowedScreens
-        .filter((key) => stackScreens[key])
-        .map((key) => (
-          <Stack.Screen
-            key={key}
-            name={key as keyof RootStackParamList}
-            component={stackScreens[key].component}
-            options={{
-              title: stackScreens[key].title,
-              headerShown: stackScreens[key].headerShown ?? true,
-            }}
-          />
-        ))}
+{Object.entries(stackScreens).map(([key, screen]) => (
+  <Stack.Screen
+    key={key}
+    name={key as keyof RootStackParamList}
+    component={screen.component}
+    options={{
+      title: screen.title,
+      headerShown: screen.headerShown ?? true,
+    }}
+  />
+))}
     </Stack.Navigator>
   );
 }

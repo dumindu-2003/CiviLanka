@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+import { rememberNicContact, saveNicFormDraft } from '../../services/nicFormSync';
 import { colors } from '../../theme/colors';
 
 interface ContactFamily {
@@ -53,6 +55,10 @@ const STEPS = [
 ];
 
 let savedDraft: ContactFamily | null = null;
+
+export function readNicContactDraft() {
+  return savedDraft;
+}
 
 export function clearNicContactDraft() {
   savedDraft = null;
@@ -142,6 +148,7 @@ export default function NicContactFamilyScreen() {
   const [form, setForm] = useState<ContactFamily>(savedDraft ?? EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFamily, string>>>({});
   const [maritalOpen, setMaritalOpen] = useState(false);
+  const saving = useRef(false);
 
   const set = <K extends keyof ContactFamily>(key: K, value: ContactFamily[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -169,12 +176,22 @@ export default function NicContactFamilyScreen() {
     setErrors((current) => ({ ...current, currentAddress: undefined }));
   };
 
-  const continueNext = () => {
+  const continueNext = async () => {
     const nextErrors = validate(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
+    if (saving.current) return;
+    saving.current = true;
     savedDraft = { ...form };
-    nav.navigate('NicDocuments');
+    rememberNicContact(savedDraft);
+    try {
+      await saveNicFormDraft();
+      nav.navigate('NicDocuments');
+    } catch (error) {
+      Alert.alert('Could not save', error instanceof Error ? error.message : 'The application was not saved.');
+    } finally {
+      saving.current = false;
+    }
   };
 
   return (

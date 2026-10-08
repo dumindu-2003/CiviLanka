@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+import { rememberNicFiles, saveNicFormDraft } from '../../services/nicFormSync';
 import { colors } from '../../theme/colors';
 
 type DocKey = 'birth' | 'address' | 'photo' | 'previous';
@@ -47,6 +48,7 @@ export default function NicDocumentsScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [files, setFiles] = useState<Partial<Record<DocKey, PickedFile>>>(savedDraft ?? EMPTY);
   const [errors, setErrors] = useState<Partial<Record<DocKey, string>>>({});
+  const saving = useRef(false);
 
   const keep = (key: DocKey, file: PickedFile) => {
     setFiles((current) => {
@@ -107,15 +109,25 @@ export default function NicDocumentsScreen() {
     ]);
   };
 
-  const review = () => {
+  const review = async () => {
     const next: Partial<Record<DocKey, string>> = {};
     for (const key of REQUIRED) {
       if (!files[key]) next[key] = 'This document is required.';
     }
     setErrors(next);
     if (Object.keys(next).length > 0) return;
+    if (saving.current) return;
+    saving.current = true;
     savedDraft = files;
-    nav.navigate('NicDeclaration');
+    rememberNicFiles(files);
+    try {
+      await saveNicFormDraft({ includeDocuments: true });
+      nav.navigate('NicDeclaration');
+    } catch (error) {
+      Alert.alert('Could not save', error instanceof Error ? error.message : 'The documents were not saved.');
+    } finally {
+      saving.current = false;
+    }
   };
 
   return (

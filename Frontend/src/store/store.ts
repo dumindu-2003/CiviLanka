@@ -1,12 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../reducers/authReducer';
 import districtReducer from '../reducers/districtReducer';
-// Other developers: add your reducer here (one line)
+import birthReducer from '../reducers/birthReducer';
+import deathReducer from '../reducers/deathReducer';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     district: districtReducer,
+    birth: birthReducer,
+    death: deathReducer,
   },
 });
 
