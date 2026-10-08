@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useState } from 'react';
 import {
-  Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,8 +15,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../../theme/colors';
 import { Card, Field, SelectField, Segmented } from '../../components/enroll/formParts';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { saveMarriageDraft } from '../../actions/marriageAction';
+import { patchBride, patchSolemnization } from '../../reducers/marriageReducer';
+import type { MarriagePerson, Solemnization } from '../../types/marriage';
+import { ageFrom, displayToIso } from '../../utils/marriageForm';
 
-type MaritalStatus = 'Single' | 'Widowed' | 'Divorced';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const RELIGIONS = ['Buddhist', 'Hindu', 'Islam', 'Roman Catholic', 'Christian', 'Other'];
@@ -34,25 +38,6 @@ const TABS: { label: string; icon: IconName }[] = [
   { label: 'Notification', icon: 'notifications-outline' },
   { label: 'Profile', icon: 'person-outline' },
 ];
-
-const BRIDE = {
-  fullName: 'Thilini Menaka Senanayake',
-  nic: '199628302198',
-  dateOfBirth: '09/22/1992',
-  age: '31 yrs',
-  occupation: 'Chartered Accountant',
-  address: '77/1, Flower Road, Colombo 07',
-  religion: 'Buddhist',
-  nationality: 'Sri Lankan',
-  maritalStatus: 'Single' as MaritalStatus,
-};
-
-const SOLEMNIZATION = {
-  dateOfMarriage: '01/18/2024',
-  placeOfMarriage: 'Divisional Secretariat, Colombo Fort',
-  registrar: 'Mr. W. M. Banduna, Justice of Peace / Registrar',
-  registrationNumber: 'REG/COL/2024/0982',
-};
 
 function CardHeader({
   icon,
@@ -82,22 +67,49 @@ export default function MarriageRegistrationStep2Screen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
-  const [bride, setBride] = useState(BRIDE);
-  const [solemnization, setSolemnization] = useState(SOLEMNIZATION);
+  const dispatch = useAppDispatch();
+  const { form, status, error, appRef } = useAppSelector((s) => s.marriage);
+  const { bride, solemnization } = form;
+  const [formError, setFormError] = useState<string | null>(null);
+  const [stepDone, setStepDone] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  const patchBride = <K extends keyof typeof bride>(key: K, value: (typeof bride)[K]) => {
-    setBride((b) => ({ ...b, [key]: value }));
+  const setBrideField = <K extends keyof MarriagePerson>(key: K, value: MarriagePerson[K]) => {
+    setStepDone(false);
+    dispatch(patchBride({ key, value } as Parameters<typeof patchBride>[0]));
   };
 
-  const patchSolemnization = <K extends keyof typeof solemnization>(
-    key: K,
-    value: (typeof solemnization)[K],
-  ) => {
-    setSolemnization((s) => ({ ...s, [key]: value }));
+  const setSolemnizationField = <K extends keyof Solemnization>(key: K, value: Solemnization[K]) => {
+    setStepDone(false);
+    dispatch(patchSolemnization({ key, value }));
+  };
+
+  const brideAge = ageFrom(bride.dob);
+
+  const onSaveDraft = () => {
+    setFormError(null);
+    setStepDone(false);
+    dispatch(saveMarriageDraft());
+  };
+
+  // Step 3 (Witnesses & Sign-off) is not built yet, so Next validates and keeps the work as a draft
+  const onNext = async () => {
+    const missing: string[] = [];
+    if (!bride.fullName.trim()) missing.push("bride's full name");
+    if (!bride.nic.trim()) missing.push("bride's NIC");
+    if (!displayToIso(bride.dob)) missing.push("bride's date of birth (DD/MM/YYYY)");
+    if (!displayToIso(solemnization.marriageDate)) missing.push('date of marriage (DD/MM/YYYY)');
+    if (!solemnization.marriagePlace.trim()) missing.push('place of marriage');
+    if (missing.length) {
+      setFormError(`Please complete: ${missing.join(', ')}.`);
+      return;
+    }
+    setFormError(null);
+    const result = await dispatch(saveMarriageDraft());
+    setStepDone(saveMarriageDraft.fulfilled.match(result));
   };
 
   return (
@@ -165,64 +177,66 @@ export default function MarriageRegistrationStep2Screen() {
               label="Bride's Full Legal Name"
               required
               value={bride.fullName}
-              onChangeText={(v) => patchBride('fullName', v)}
+              onChangeText={(v) => setBrideField('fullName', v)}
               placeholder="Full legal name"
             />
             <Field
               label="Female NIC"
               required
               value={bride.nic}
-              onChangeText={(v) => patchBride('nic', v)}
+              onChangeText={(v) => setBrideField('nic', v)}
               autoCapitalize="characters"
+              maxLength={12}
               placeholder="NIC number"
             />
             <Field
               label="Date of Birth"
               required
-              value={bride.dateOfBirth}
-              onChangeText={(v) => patchBride('dateOfBirth', v)}
-              placeholder="MM/DD/YYYY"
+              value={bride.dob}
+              onChangeText={(v) => setBrideField('dob', v)}
+              placeholder="DD/MM/YYYY"
               keyboardType="numbers-and-punctuation"
               maxLength={10}
               rightIcon="calendar-outline"
             />
-            <Field label="Age (Completed Years)" required value={bride.age} editable={false} />
+            <Field
+              label="Age (Completed Years)"
+              value={brideAge === null ? '' : String(brideAge)}
+              editable={false}
+              placeholder="Calculated from date of birth"
+            />
             <Field
               label="Occupation"
-              required
               value={bride.occupation}
-              onChangeText={(v) => patchBride('occupation', v)}
+              onChangeText={(v) => setBrideField('occupation', v)}
               placeholder="Occupation"
             />
             <Field
               label="Permanent Address"
-              required
               value={bride.address}
-              onChangeText={(v) => patchBride('address', v)}
+              onChangeText={(v) => setBrideField('address', v)}
               placeholder="Permanent address"
             />
             <SelectField
               label="Religion"
-              required
               value={bride.religion}
               placeholder="Select religion"
               options={RELIGIONS}
-              onSelect={(v) => patchBride('religion', v)}
+              onSelect={(v) => setBrideField('religion', v)}
             />
             <SelectField
               label="Nationality"
-              required
               value={bride.nationality}
               placeholder="Select nationality"
               options={NATIONALITIES}
-              onSelect={(v) => patchBride('nationality', v)}
+              onSelect={(v) => setBrideField('nationality', v)}
             />
 
             <View>
               <Text style={styles.fieldLabel}>Marital Status *</Text>
               <Segmented
                 value={bride.maritalStatus}
-                onChange={(v) => patchBride('maritalStatus', v)}
+                onChange={(v) => setBrideField('maritalStatus', v)}
                 options={[{ value: 'Single' }, { value: 'Widowed' }, { value: 'Divorced' }]}
               />
             </View>
@@ -234,9 +248,9 @@ export default function MarriageRegistrationStep2Screen() {
             <Field
               label="Date of Marriage"
               required
-              value={solemnization.dateOfMarriage}
-              onChangeText={(v) => patchSolemnization('dateOfMarriage', v)}
-              placeholder="MM/DD/YYYY"
+              value={solemnization.marriageDate}
+              onChangeText={(v) => setSolemnizationField('marriageDate', v)}
+              placeholder="DD/MM/YYYY"
               keyboardType="numbers-and-punctuation"
               maxLength={10}
               rightIcon="calendar-outline"
@@ -244,22 +258,20 @@ export default function MarriageRegistrationStep2Screen() {
             <Field
               label="Place of Marriage"
               required
-              value={solemnization.placeOfMarriage}
-              onChangeText={(v) => patchSolemnization('placeOfMarriage', v)}
+              value={solemnization.marriagePlace}
+              onChangeText={(v) => setSolemnizationField('marriagePlace', v)}
               placeholder="Place of marriage"
             />
             <Field
               label="Marriage Registrar (Name & Title)"
-              required
               value={solemnization.registrar}
-              onChangeText={(v) => patchSolemnization('registrar', v)}
+              onChangeText={(v) => setSolemnizationField('registrar', v)}
               placeholder="Registrar name and title"
             />
             <Field
               label="Registration Number"
-              required
               value={solemnization.registrationNumber}
-              onChangeText={(v) => patchSolemnization('registrationNumber', v)}
+              onChangeText={(v) => setSolemnizationField('registrationNumber', v)}
               autoCapitalize="characters"
               placeholder="Registration number"
             />
@@ -276,10 +288,20 @@ export default function MarriageRegistrationStep2Screen() {
             </View>
           </View>
 
+          {formError ? <Text style={styles.errorText}>{formError}</Text> : null}
+          {status === 'failed' && error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {status === 'saved' ? (
+            <Text style={styles.savedText}>
+              Draft saved{appRef ? ` (${appRef})` : ''}.
+              {stepDone ? ' Step 3 (Witnesses & Sign-off) is not built yet, so the application stays as a draft.' : ''}
+            </Text>
+          ) : null}
+
           <Pressable
             accessibilityRole="button"
-            style={styles.nextBtn}
-            onPress={() => undefined}
+            style={[styles.nextBtn, status === 'saving' && styles.disabled]}
+            onPress={onNext}
+            disabled={status === 'saving'}
           >
             <Text style={styles.nextBtnText}>Next: Witnesses & Sign-off</Text>
             <Ionicons name="arrow-forward" size={16} color={colors.white} />
@@ -296,11 +318,16 @@ export default function MarriageRegistrationStep2Screen() {
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              style={styles.secondaryBtn}
-              onPress={() => Alert.alert('Saved as draft', 'Draft save is UI only for now.')}
+              style={[styles.secondaryBtn, status === 'saving' && styles.disabled]}
+              onPress={onSaveDraft}
+              disabled={status === 'saving'}
             >
-              <Ionicons name="save-outline" size={14} color={colors.navy} />
-              <Text style={styles.secondaryText}>Save as Draft</Text>
+              {status === 'saving' ? (
+                <ActivityIndicator size="small" color={colors.navy} />
+              ) : (
+                <Ionicons name="save-outline" size={14} color={colors.navy} />
+              )}
+              <Text style={styles.secondaryText}>{status === 'saving' ? 'Saving...' : 'Save as Draft'}</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -438,6 +465,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   secondaryText: { fontSize: 12, fontWeight: '600', color: colors.navy, textAlign: 'center' },
+  disabled: { opacity: 0.6 },
+  errorText: { fontSize: 12, lineHeight: 17, color: '#B3261E' },
+  savedText: { fontSize: 12, lineHeight: 17, fontWeight: '600', color: colors.green },
 
   tabBar: {
     flexDirection: 'row',

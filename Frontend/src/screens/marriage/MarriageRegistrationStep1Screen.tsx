@@ -1,5 +1,6 @@
 import React, { useLayoutEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,30 +18,17 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/colors';
 import { Card, Field } from '../../components/enroll/formParts';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { saveMarriageDraft } from '../../actions/marriageAction';
+import { patchGroom, setApplicant, setApplicantIsGroom } from '../../reducers/marriageReducer';
+import { searchCitizens, type CitizenListItem } from '../../services/citizenService';
+import type { MaritalStatus, MarriagePerson } from '../../types/marriage';
+import { ageFrom, displayToIso, isoToDisplay } from '../../utils/marriageForm';
 
-type MaritalStatus = 'Single / Bachelor' | 'Widowed' | 'Divorced';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-const MARITAL_OPTIONS: MaritalStatus[] = ['Single / Bachelor', 'Widowed', 'Divorced'];
-
-const APPLICANT = {
-  fullName: 'Kavinda Ravishan Jayasuriya',
-  nic: '199841201824',
-  dob: '14/05/1989',
-  address: 'No. 18/B, Circular Road, Nawala, Rajagiriya',
-};
-
-const GROOM = {
-  fullName: 'Kavinda Ravishan Jayasuriya',
-  nic: '199841201824',
-  dob: '14/05/1989',
-  age: '34',
-  occupation: 'Software Architect',
-  address: 'No. 18/B, Circular Road, Nawala, Rajagiriya',
-  religion: 'Buddhist',
-  nationality: 'Sri Lankan',
-  maritalStatus: 'Single / Bachelor' as MaritalStatus,
-};
+const MARITAL_OPTIONS: MaritalStatus[] = ['Single', 'Widowed', 'Divorced'];
+const maritalLabel = (m: MaritalStatus) => (m === 'Single' ? 'Single / Bachelor' : m);
 
 const STAGES: { n: number; line1: string; line2?: string }[] = [
   { n: 1, line1: 'Groom' },
@@ -86,7 +74,7 @@ function MaritalStatusDropdown({
   value: MaritalStatus;
   onChange: (v: MaritalStatus) => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <View>
@@ -97,7 +85,7 @@ function MaritalStatusDropdown({
         accessibilityRole="button"
         accessibilityLabel="Marital Status"
       >
-        <Text style={styles.selectValue}>{value}</Text>
+        <Text style={styles.selectValue}>{maritalLabel(value)}</Text>
         <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={colors.text} />
       </Pressable>
       {open ? (
@@ -116,7 +104,7 @@ function MaritalStatusDropdown({
                 accessibilityState={{ selected }}
               >
                 <Text style={[styles.selectOptionText, selected && styles.selectOptionTextOn]}>
-                  {option}
+                  {maritalLabel(option)}
                 </Text>
               </Pressable>
             );
@@ -127,35 +115,125 @@ function MaritalStatusDropdown({
   );
 }
 
+function ApplicantSearch() {
+  const dispatch = useAppDispatch();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<CitizenListItem[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onSearch = async () => {
+    if (query.trim().length < 2) {
+      setError('Enter an NIC or at least 2 letters of the name.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      setResults(await searchCitizens(query.trim()));
+    } catch (e) {
+      setResults(null);
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onPick = (c: CitizenListItem) => {
+    dispatch(
+      setApplicant({
+        citizenId: c.citizen_id,
+        fullName: c.full_name,
+        nic: c.nic ?? '',
+        dob: isoToDisplay(c.date_of_birth),
+        address: c.address ?? '',
+      }),
+    );
+  };
+
+  return (
+    <View style={styles.searchWrap}>
+      <Field
+        label="Find Applicant (NIC or Name)"
+        required
+        value={query}
+        onChangeText={setQuery}
+        onSubmitEditing={onSearch}
+        returnKeyType="search"
+        autoCapitalize="characters"
+        placeholder="e.g. 198507312345"
+        right={
+          <Pressable onPress={onSearch} hitSlop={8} accessibilityRole="button" accessibilityLabel="Search citizen">
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.navy} />
+            ) : (
+              <Ionicons name="search" size={18} color={colors.navy} />
+            )}
+          </Pressable>
+        }
+      />
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {results && results.length === 0 ? (
+        <Text style={styles.hintText}>No citizen found. Check the NIC or the spelling of the name.</Text>
+      ) : null}
+      {results?.map((c) => (
+        <Pressable
+          key={c.citizen_id}
+          onPress={() => onPick(c)}
+          style={styles.resultRow}
+          accessibilityRole="button"
+          accessibilityLabel={`Select ${c.full_name}`}
+        >
+          <View style={styles.flex}>
+            <Text style={styles.resultName}>{c.full_name}</Text>
+            <Text style={styles.resultMeta}>
+              {c.nic} · {isoToDisplay(c.date_of_birth)} · {c.gender}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.navy} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export default function MarriageRegistrationStep1Screen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
-
-  const [applicantIsGroom, setApplicantIsGroom] = useState(true);
-  const [groom, setGroom] = useState(GROOM);
+  const dispatch = useAppDispatch();
+  const { form, status, error, appRef } = useAppSelector((s) => s.marriage);
+  const { applicant, applicantIsGroom, groom } = form;
+  const [formError, setFormError] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  const patchGroom = <K extends keyof typeof groom>(key: K, value: (typeof groom)[K]) => {
-    setGroom((g) => ({ ...g, [key]: value }));
+  const setGroomField = <K extends keyof MarriagePerson>(key: K, value: MarriagePerson[K]) => {
+    dispatch(patchGroom({ key, value } as Parameters<typeof patchGroom>[0]));
   };
 
-  const onToggleApplicantIsGroom = (on: boolean) => {
-    setApplicantIsGroom(on);
-    if (on) {
-      setGroom((g) => ({
-        ...g,
-        fullName: APPLICANT.fullName,
-        nic: APPLICANT.nic,
-        dob: APPLICANT.dob,
-        address: APPLICANT.address,
-      }));
+  const groomLocked = applicantIsGroom && applicant !== null;
+  const groomAge = ageFrom(groom.dob);
+
+  const onNext = () => {
+    const missing: string[] = [];
+    if (!applicant) missing.push('applicant');
+    if (!groom.fullName.trim()) missing.push("groom's full name");
+    if (!groom.nic.trim()) missing.push("groom's NIC");
+    if (!displayToIso(groom.dob)) missing.push("groom's date of birth (DD/MM/YYYY)");
+    if (missing.length) {
+      setFormError(`Please complete: ${missing.join(', ')}.`);
+      return;
     }
+    setFormError(null);
+    navigation.navigate('MarriageRegistrationStep2');
   };
 
-  const groomLocked = applicantIsGroom;
+  const onSaveDraft = () => {
+    setFormError(null);
+    dispatch(saveMarriageDraft());
+  };
 
   return (
     <View style={styles.root}>
@@ -226,7 +304,9 @@ export default function MarriageRegistrationStep1Screen() {
               <Text style={styles.toggleLabel}>Applicant is the Groom</Text>
               <Switch
                 value={applicantIsGroom}
-                onValueChange={onToggleApplicantIsGroom}
+                onValueChange={(on) => {
+                  dispatch(setApplicantIsGroom(on));
+                }}
                 trackColor={{ false: '#C8CDD6', true: colors.navy }}
                 thumbColor={colors.white}
                 ios_backgroundColor="#C8CDD6"
@@ -234,15 +314,29 @@ export default function MarriageRegistrationStep1Screen() {
               />
             </View>
 
-            <Field label="Applicant Full Name" value={APPLICANT.fullName} editable={false} />
-            <Field label="Applicant NIC (National Identity Card)" value={APPLICANT.nic} editable={false} />
-            <Field
-              label="Applicant Date of Birth"
-              value={APPLICANT.dob}
-              editable={false}
-              rightIcon="calendar-outline"
-            />
-            <Field label="Applicant Address" value={APPLICANT.address} editable={false} multiline />
+            {applicant ? (
+              <>
+                <Field label="Applicant Full Name" value={applicant.fullName} editable={false} />
+                <Field label="Applicant NIC (National Identity Card)" value={applicant.nic} editable={false} />
+                <Field
+                  label="Applicant Date of Birth"
+                  value={applicant.dob}
+                  editable={false}
+                  rightIcon="calendar-outline"
+                />
+                <Field label="Applicant Address" value={applicant.address} editable={false} multiline />
+                <Pressable
+                  onPress={() => dispatch(setApplicant(null))}
+                  style={styles.changeBtn}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="swap-horizontal" size={14} color={colors.navy} />
+                  <Text style={styles.changeText}>Change applicant</Text>
+                </Pressable>
+              </>
+            ) : (
+              <ApplicantSearch />
+            )}
           </Card>
 
           <Card>
@@ -250,39 +344,49 @@ export default function MarriageRegistrationStep1Screen() {
 
             <Field
               label="Groom's Full Legal Name"
+              required
               value={groom.fullName}
-              onChangeText={(v) => patchGroom('fullName', v)}
+              onChangeText={(v) => setGroomField('fullName', v)}
               editable={!groomLocked}
               placeholder="Full legal name"
             />
             <Field
               label="Male NIC (National Identity Card)"
+              required
               value={groom.nic}
-              onChangeText={(v) => patchGroom('nic', v)}
+              onChangeText={(v) => setGroomField('nic', v)}
               editable={!groomLocked}
               autoCapitalize="characters"
+              maxLength={12}
               placeholder="NIC number"
             />
             <Field
               label="Date of Birth"
+              required
               value={groom.dob}
-              onChangeText={(v) => patchGroom('dob', v)}
+              onChangeText={(v) => setGroomField('dob', v)}
+              editable={!groomLocked}
               placeholder="DD/MM/YYYY"
               keyboardType="numbers-and-punctuation"
               maxLength={10}
               rightIcon="calendar-outline"
             />
-            <Field label="Age (Completed Years)" value={groom.age} editable={false} />
+            <Field
+              label="Age (Completed Years)"
+              value={groomAge === null ? '' : String(groomAge)}
+              editable={false}
+              placeholder="Calculated from date of birth"
+            />
             <Field
               label="Occupation / Profession"
               value={groom.occupation}
-              onChangeText={(v) => patchGroom('occupation', v)}
+              onChangeText={(v) => setGroomField('occupation', v)}
               placeholder="Occupation"
             />
             <Field
               label="Permanent Address"
               value={groom.address}
-              onChangeText={(v) => patchGroom('address', v)}
+              onChangeText={(v) => setGroomField('address', v)}
               editable={!groomLocked}
               multiline
               placeholder="Permanent address"
@@ -290,19 +394,19 @@ export default function MarriageRegistrationStep1Screen() {
             <Field
               label="Religion / Faith"
               value={groom.religion}
-              onChangeText={(v) => patchGroom('religion', v)}
+              onChangeText={(v) => setGroomField('religion', v)}
               placeholder="Religion"
             />
             <Field
               label="Nationality"
               value={groom.nationality}
-              onChangeText={(v) => patchGroom('nationality', v)}
+              onChangeText={(v) => setGroomField('nationality', v)}
               placeholder="Nationality"
             />
 
             <MaritalStatusDropdown
               value={groom.maritalStatus}
-              onChange={(v) => patchGroom('maritalStatus', v)}
+              onChange={(v) => setGroomField('maritalStatus', v)}
             />
           </Card>
 
@@ -314,14 +418,29 @@ export default function MarriageRegistrationStep1Screen() {
             </Text>
           </View>
 
-          <Pressable accessibilityRole="button" style={styles.nextBtn} onPress={() => undefined}>
+          {formError ? <Text style={styles.errorText}>{formError}</Text> : null}
+          {status === 'failed' && error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {status === 'saved' ? (
+            <Text style={styles.savedText}>Draft saved{appRef ? ` (${appRef})` : ''}.</Text>
+          ) : null}
+
+          <Pressable accessibilityRole="button" style={styles.nextBtn} onPress={onNext}>
             <Text style={styles.nextBtnText}>Next: Bride & Solemnization Details</Text>
             <Ionicons name="arrow-forward" size={16} color={colors.white} />
           </Pressable>
 
-          <Pressable accessibilityRole="button" style={styles.draftBtn} onPress={() => undefined}>
-            <Ionicons name="save-outline" size={14} color={colors.navy} />
-            <Text style={styles.draftText}>Save as Draft</Text>
+          <Pressable
+            accessibilityRole="button"
+            style={[styles.draftBtn, status === 'saving' && styles.disabled]}
+            onPress={onSaveDraft}
+            disabled={status === 'saving'}
+          >
+            {status === 'saving' ? (
+              <ActivityIndicator size="small" color={colors.navy} />
+            ) : (
+              <Ionicons name="save-outline" size={14} color={colors.navy} />
+            )}
+            <Text style={styles.draftText}>{status === 'saving' ? 'Saving...' : 'Save as Draft'}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -502,6 +621,27 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   draftText: { fontSize: 13, fontWeight: '600', color: colors.navy },
+  disabled: { opacity: 0.6 },
+
+  searchWrap: { gap: 8 },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E8EE',
+    backgroundColor: colors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  resultName: { fontSize: 13, fontWeight: '600', color: colors.text },
+  resultMeta: { fontSize: 11, color: colors.muted, marginTop: 2 },
+  changeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 4 },
+  changeText: { fontSize: 12, fontWeight: '600', color: colors.navy },
+  errorText: { fontSize: 12, lineHeight: 17, color: '#B3261E' },
+  hintText: { fontSize: 12, lineHeight: 17, color: colors.muted },
+  savedText: { fontSize: 12, lineHeight: 17, fontWeight: '600', color: colors.green },
 
   tabBar: {
     flexDirection: 'row',

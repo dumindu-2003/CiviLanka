@@ -6,6 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/colors';
+import { useAppDispatch } from '../../store/hooks';
+import { resetDraft } from '../../reducers/marriageReducer';
 
 type RegStatus = 'Approved' | 'Pending';
 
@@ -41,6 +43,7 @@ function StatusPill({ status }: { status: RegStatus }) {
 
 export default function MarriageDashboardScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dispatch = useAppDispatch();
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
@@ -93,7 +96,10 @@ export default function MarriageDashboardScreen() {
           <Pressable
             accessibilityRole="button"
             style={styles.actionBtn}
-            onPress={() => navigation.navigate('MarriageRegistrationStep1')}
+            onPress={() => {
+              dispatch(resetDraft());
+              navigation.navigate('MarriageRegistrationStep1');
+            }}
           >
             <Ionicons name="add" size={18} color={colors.white} />
             <Text style={styles.actionText}>New Marriage Registration</Text>
