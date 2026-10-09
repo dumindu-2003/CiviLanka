@@ -136,9 +136,9 @@ export default function DistrictDashboardScreen() {
     }, [dispatch, category]),
   );
 
-  const confirm = async (credentials: SignOffCredentials) => {
+  const confirm = async (credentials: SignOffCredentials, reason?: string) => {
     if (!pending) return;
-    const result = await dispatch(decideApplication({ ...pending, credentials }));
+    const result = await dispatch(decideApplication({ ...pending, credentials, reason }));
     setPending(null);
     if (decideApplication.rejected.match(result)) {
       Alert.alert('Not authorized', result.error.message ?? 'Action failed');
