@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -64,19 +63,16 @@ export default function NicDocumentsScreen() {
   };
 
   const pickDocument = async (key: DocKey) => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['application/pdf', 'image/jpeg'],
-      copyToCacheDirectory: true,
-      multiple: false,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
     if (result.canceled) return;
     const asset = result.assets[0];
-    const message = fileError(asset.name, asset.mimeType, asset.size, false);
+    const name = asset.fileName ?? 'document.jpg';
+    const message = fileError(name, asset.mimeType, asset.fileSize, false);
     if (message) {
       reject(key, message);
       return;
     }
-    keep(key, { name: asset.name, uri: asset.uri, size: asset.size });
+    keep(key, { name, uri: asset.uri, size: asset.fileSize });
   };
 
   const pickPhoto = async (camera: boolean) => {
@@ -168,7 +164,7 @@ export default function NicDocumentsScreen() {
 
         <DocCard
           title="Birth Certificate Copy"
-          detail="Original scan or certified copy. PDF/JPG up to 5MB"
+          detail="Original scan or certified copy. JPG up to 5MB"
           required
           file={files.birth}
           error={errors.birth}
@@ -176,7 +172,7 @@ export default function NicDocumentsScreen() {
         />
         <DocCard
           title="Proof of Address"
-          detail="Utility bill or Grama Niladhari certificate (< 3 months)"
+          detail="Utility bill or Grama Niladhari certificate (< 3 months), JPG up to 5MB"
           required
           file={files.address}
           error={errors.address}
