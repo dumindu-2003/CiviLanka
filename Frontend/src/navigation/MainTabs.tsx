@@ -27,9 +27,9 @@ export default function MainTabs() {
         tabBarIcon: ({ color, size }) => <Ionicons name={icons[route.name]} color={color} size={size} />,
       })}
     >
-      <Tab.Screen name="Home" component={Dashboard} />
-      <Tab.Screen name="News" component={NewsScreen} />
-      <Tab.Screen name="Notification" component={NotificationScreen} />
+      <Tab.Screen name="Home" component={Dashboard} options={{ headerShown: false }} />
+      <Tab.Screen name="News" component={NewsScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Notification" component={NotificationScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Profile" component={MyProfileScreen} />
     </Tab.Navigator>
   );

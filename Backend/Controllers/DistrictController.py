@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends
 
 from App_Start import UnityConfig
 from Interfaces.IDistrict import IDistrict
-from Models.RequestApiModels.DistrictRequestAPI import DistrictRequestAPI, DistrictDecisionRequestAPI
+from Models.RequestApiModels.DistrictRequestAPI import (
+    DistrictDecisionRequestAPI, DistrictOfficerCreateRequestAPI, DistrictRequestAPI,
+)
 from Models.Response import Response
 from Static.Security import CurrentOfficer, GetCurrentOfficer
 
@@ -65,3 +67,15 @@ def ReportList(requestAPI: DistrictRequestAPI = Depends(), officer: CurrentOffic
 def ReportTrend(requestAPI: DistrictRequestAPI = Depends(), officer: CurrentOfficer = Depends(GetCurrentOfficer), _District: IDistrict = Depends(GetDistrict)):
     requestAPI.acting_officer_id = officer.officer_id          # from the JWT, never from the client
     return _District.ReportTrend(requestAPI)
+
+
+@router.post("/OfficerCreate", response_model=Response)
+def OfficerCreate(requestAPI: DistrictOfficerCreateRequestAPI, officer: CurrentOfficer = Depends(GetCurrentOfficer), _District: IDistrict = Depends(GetDistrict)):
+    requestAPI.acting_officer_id = officer.officer_id          # from the JWT, never from the client
+    return _District.OfficerCreate(requestAPI)
+
+
+@router.get("/FindPerson", response_model=Response)
+def FindPerson(requestAPI: DistrictRequestAPI = Depends(), officer: CurrentOfficer = Depends(GetCurrentOfficer), _District: IDistrict = Depends(GetDistrict)):
+    requestAPI.acting_officer_id = officer.officer_id          # from the JWT, never from the client
+    return _District.FindPerson(requestAPI)

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../../theme/colors';
 import {
   Card, DISTRICTS, EnrollForm, Field, InfoNote, NavRow, PrimaryButton, ROLES, Segmented, SectionTitle, SelectField, SetFn,
 } from '../../../components/enroll/formParts';
+import { CalendarModal } from '../../../components/enroll/CalendarModal';
 
 export interface StepProps {
   form: EnrollForm;
@@ -15,7 +17,7 @@ export interface StepProps {
 }
 
 // ---------------- validation ----------------
-const isoDob = (d: string) => {
+export const isoDob = (d: string) => {
   const m = /^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/.exec(d.trim());
   return m ? `${m[3]}-${m[2]}-${m[1]}` : d;
 };
@@ -26,10 +28,14 @@ export function validate(step: number, f: EnrollForm): string | null {
     if (!/^(\d{9}[vVxX]|\d{12})$/.test(f.nic.trim())) return 'Enter a valid NIC number (e.g. 199012345678 or 901234567V).';
     const m = /^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/.exec(f.dob.trim());
     if (!m || +m[1] < 1 || +m[1] > 31 || +m[2] < 1 || +m[2] > 12) return 'Enter the date of birth as DD / MM / YYYY.';
+    const dt = new Date(+m[3], +m[2] - 1, +m[1]);
+    if (dt.getFullYear() !== +m[3] || dt.getMonth() !== +m[2] - 1 || dt.getDate() !== +m[1] || dt > new Date())
+      return 'Enter a real date of birth (DD / MM / YYYY).';
   }
   if (step === 1) {
     if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) return 'Enter a valid personal email address.';
     if (!/^\+?[\d\s]{9,15}$/.test(f.phone.trim())) return 'Enter a valid mobile number (e.g. +94 77 123 4567).';
+    if (f.phone.replace(/\s/g, '').length > 15) return 'The mobile number is too long (max 15 characters).';
     if (f.address.trim().length < 5) return 'Enter the permanent home address.';
     if (!f.district) return 'Select a district.';
   }
@@ -41,10 +47,14 @@ export function validate(step: number, f: EnrollForm): string | null {
   }
   if (step === 3) {
     if (!f.cadreNo.trim()) return 'Enter the employee / cadre service number.';
+    if (f.cadreNo.trim().length > 20) return 'The service number can be at most 20 characters.';
     if (!f.department.trim()) return 'Enter the government department / ministry.';
     if (!f.designation.trim()) return 'Enter the official designation.';
     if (!f.workAddress.trim()) return 'Enter the official work address.';
     if (!/^\S+@\S+\.gov\.lk$/i.test(f.govEmail.trim())) return 'Enter a valid official email ending with .gov.lk.';
+    // the part before @ becomes the login username
+    if (!/^[A-Za-z0-9._-]{1,50}$/.test(f.govEmail.trim().split('@')[0]))
+      return 'The part of the official email before @ is the login username: use letters, numbers, . - _ only.';
     if (!/^[\d\s+/A-Za-z.-]{6,}$/.test(f.officeLine.trim())) return 'Enter the office direct line.';
   }
   if (step === 4) {
@@ -53,18 +63,52 @@ export function validate(step: number, f: EnrollForm): string | null {
   return null;
 }
 
+// ---------------- photo (camera / gallery) ----------------
+const pickPhoto = async (fromCamera: boolean, set: SetFn) => {
+  try {
+    if (fromCamera) {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Camera permission needed', 'Allow camera access in your phone settings to take a photo.');
+        return;
+      }
+    }
+    const options: ImagePicker.ImagePickerOptions = {
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.3, // small file: the server accepts max 2 MB
+    };
+    const res = fromCamera ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+    if (res.canceled || !res.assets || res.assets.length === 0) return;
+
+    const a = res.assets[0];
+    set('photo', { uri: a.uri, name: a.fileName ?? `photo_${Date.now()}.jpg`, type: a.mimeType ?? 'image/jpeg' });
+  } catch (e: any) {
+    Alert.alert('Photo not added', e?.message ?? 'Please try again.');
+  }
+};
+
+const choosePhoto = (set: SetFn) =>
+  Alert.alert('Official Identification Photo', 'Choose how to add the photo', [
+    { text: 'Take photo', onPress: () => pickPhoto(true, set) },
+    { text: 'Choose from gallery', onPress: () => pickPhoto(false, set) },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
+
 // ---------------- step 1 ----------------
 export function StepPersonal({ form, set, onNext }: StepProps) {
+  const [calendar, setCalendar] = useState(false);
   return (
     <>
       <Card>
         <View style={s.photoWrap}>
-          <Pressable
-            onPress={() => Alert.alert('Photo upload', 'The photo picker is not available yet.')}
-            style={s.photoCircle}
-            accessibilityLabel="Upload photo"
-          >
-            <Ionicons name="image-outline" size={34} color={colors.navy} />
+          <Pressable onPress={() => choosePhoto(set)} style={s.photoCircle} accessibilityLabel="Upload photo">
+            {form.photo ? (
+              <Image source={{ uri: form.photo.uri }} style={s.photoImg} resizeMode="cover" />
+            ) : (
+              <Ionicons name="image-outline" size={34} color={colors.navy} />
+            )}
             <View style={s.cameraBadge}>
               <Ionicons name="camera" size={11} color={colors.white} />
             </View>
@@ -98,7 +142,19 @@ export function StepPersonal({ form, set, onNext }: StepProps) {
           placeholder="DD / MM / YYYY"
           keyboardType="numbers-and-punctuation"
           maxLength={14}
-          rightIcon="calendar-outline"
+          right={
+            <Pressable
+              onPress={() => {
+                Keyboard.dismiss();
+                setCalendar(true);
+              }}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Open calendar"
+            >
+              <Ionicons name="calendar-outline" size={17} color={colors.navy} />
+            </Pressable>
+          }
         />
 
         <View>
@@ -131,6 +187,16 @@ export function StepPersonal({ form, set, onNext }: StepProps) {
 
       <PrimaryButton label="Continue to Contact Details" onPress={onNext} />
       <Text style={s.stepCaption}>Step 1 of 5 • Next: Contact & Residential Info</Text>
+
+      <CalendarModal
+        visible={calendar}
+        value={form.dob}
+        onSelect={(v) => {
+          set('dob', v);
+          setCalendar(false);
+        }}
+        onClose={() => setCalendar(false)}
+      />
     </>
   );
 }
@@ -384,7 +450,11 @@ export function StepReview({ form, set, onNext, onBack, goTo }: StepProps) {
         </View>
         <View style={s.rowTop}>
           <View style={s.reviewPhoto}>
-            <Ionicons name="person" size={26} color="#C8C8C8" />
+            {form.photo ? (
+              <Image source={{ uri: form.photo.uri }} style={s.reviewPhotoImg} resizeMode="cover" />
+            ) : (
+              <Ionicons name="person" size={26} color="#C8C8C8" />
+            )}
           </View>
           <View style={{ flex: 1, gap: 8 }}>
             <Text style={s.reviewName}>{form.fullName}</Text>
@@ -473,6 +543,7 @@ const s = StyleSheet.create({
   groupLabel: { fontSize: 11.5, fontWeight: '600', color: colors.text, marginBottom: 6 },
 
   photoWrap: { alignItems: 'center', gap: 6, paddingTop: 4 },
+  photoImg: { width: 80, height: 80, borderRadius: 40 },
   photoCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#EDEDED', alignItems: 'center', justifyContent: 'center' },
   cameraBadge: { position: 'absolute', right: 0, bottom: 2, width: 22, height: 22, borderRadius: 6, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
   photoTitle: { fontSize: 13, fontWeight: '600', color: colors.text, marginTop: 4 },
@@ -503,6 +574,7 @@ const s = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 4, backgroundColor: colors.navy, paddingHorizontal: 8, paddingVertical: 4 },
   editText: { fontSize: 9, color: colors.white },
+  reviewPhotoImg: { width: 56, height: 56, borderRadius: 10 },
   reviewPhoto: { width: 56, height: 56, borderRadius: 10, backgroundColor: '#EDEDED', alignItems: 'center', justifyContent: 'center' },
   reviewName: { fontSize: 15, fontWeight: '700', color: colors.text },
   kvLabel: { fontSize: 8.5, letterSpacing: 0.5, color: colors.muted },

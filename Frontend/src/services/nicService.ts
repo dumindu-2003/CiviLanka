@@ -27,7 +27,18 @@ export interface NicData {
   mother_name?: string;
   mother_nic?: string;
   marital_status?: string;
-  spouse_name?: string;
+  spouse_name?: string; // existing column; the village form does not collect this
+  same_as_permanent?: boolean;
+  nic_type?: 'New' | 'Renewal'; // New unless a previous NIC copy was attached
+  documents?: NicDocument[];
+}
+
+export interface NicDocument {
+  document_key: 'birth' | 'address' | 'photo' | 'previous';
+  original_file_name: string;
+  content_type: 'application/pdf' | 'image/jpeg' | 'image/png';
+  file_size_bytes: number;
+  stored_file_name: string;
 }
 
 // ── FULL RECORD (GET /api/nic/Get) ─────────────────────────────────────────
@@ -71,10 +82,13 @@ export const updateNic = (appId: number, data: NicData) =>
 // POST /api/nic/Submit
 // body    : { app_id, signoff_username, signoff_service_number, signoff_password }
 export const submitNic = (appId: number, credentials: SignOffCredentials) =>
-  apiClient.post<AppSaveResult>('/api/nic/Submit', { app_id: appId, ...toSignoff(credentials) });
+  apiClient.post<AppSaveResult & { receipt_ref?: string }>('/api/nic/Submit', { app_id: appId, ...toSignoff(credentials) });
 
 // ── DELETE (own Draft only) ────────────────────────────────────────────────
 // POST /api/nic/Delete
 // body    : { app_id }
 export const deleteNicDraft = (appId: number) =>
   apiClient.post<{ app_id: number }>('/api/nic/Delete', { app_id: appId });
+
+export const uploadNicDocument = (file: { uri: string; name: string; type: string }) =>
+  apiClient.upload<Omit<NicDocument, 'document_key'>>('/api/nic/UploadDocument', file);

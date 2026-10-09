@@ -6,7 +6,14 @@ import { colors } from '../../theme/colors';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
+export interface PickedPhoto {
+  uri: string;
+  name: string;
+  type: string;
+}
+
 export interface EnrollForm {
+  photo: PickedPhoto | null;
   fullName: string;
   nic: string;
   dob: string;
@@ -30,6 +37,7 @@ export interface EnrollForm {
 }
 
 export const initialForm: EnrollForm = {
+  photo: null,
   fullName: '', nic: '', dob: '', gender: 'Male', language: 'Sinhala',
   email: '', phone: '', address: '', district: '',
   role: '', password: '', confirm: '',
@@ -45,7 +53,8 @@ export const DISTRICTS = [
   'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya',
 ];
 
-export const ROLES = ['Village Officer', 'Grama Niladhari', 'Assistant Registrar', 'District Registrar'];
+// Must match roles.role_name in the database (the API looks the role up by this name)
+export const ROLES = ['Village Officer', 'Birth Registrar', 'Death Registrar', 'Marriage Registrar', 'Bank Officer', 'District Registrar'];
 
 // ---------------- header ----------------
 export interface HeaderCfg {
