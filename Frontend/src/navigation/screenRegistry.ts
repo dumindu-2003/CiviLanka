@@ -6,6 +6,8 @@ import DistrictDashboardScreen from '../screens/district/DistrictDashboardScreen
 import VillageDashboardScreen from '../screens/village/VillageDashboardScreen';
 import CertificatePreviewScreen from '../screens/village/CertificatePreviewScreen';
 import CertificateDetailScreen from '../screens/village/CertificateDetailScreen';
+import MyNicFormsScreen from '../screens/village/MyNicFormsScreen';
+import MyNicFormDetailScreen from '../screens/village/MyNicFormDetailScreen';
 import ReportsScreen from '../screens/district/ReportsScreen';
 import AllRecordsScreen from '../screens/district/AllRecordsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
@@ -130,6 +132,18 @@ export const stackScreens: Record<
   CertificateDetail: {
     component: CertificateDetailScreen,
     title: 'Certificate',
+    headerShown: false,
+  },
+
+  MyNicForms: {
+    component: MyNicFormsScreen,
+    title: 'Filled NIC Forms',
+    headerShown: false,
+  },
+
+  MyNicFormDetail: {
+    component: MyNicFormDetailScreen,
+    title: 'NIC Form',
     headerShown: false,
   },
 };

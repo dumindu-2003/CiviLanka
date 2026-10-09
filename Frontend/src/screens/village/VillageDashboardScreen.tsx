@@ -141,6 +141,11 @@ export default function VillageDashboardScreen() {
     nav.navigate('NicPersonalDetails');
   };
 
+  const openFilledNic = () => {
+    setMenuOpen(false);
+    nav.navigate('MyNicForms');
+  };
+
   const openPreview = (kind: CertKind, ref?: string) => {
     if (ref) nav.navigate('CertificateDetail', { kind, ref });
     else nav.navigate('CertificatePreview', { kind });
@@ -186,6 +191,10 @@ export default function VillageDashboardScreen() {
           <Pressable onPress={openNicForm} accessibilityRole="button" style={styles.fillBtn}>
             <Ionicons name="document-text-outline" size={18} color={colors.navy} />
             <Text style={styles.fillText}>Fill NIC Form</Text>
+          </Pressable>
+          <Pressable onPress={openFilledNic} accessibilityRole="button" style={styles.viewNicBtn}>
+            <Ionicons name="folder-open-outline" size={18} color={colors.navy} />
+            <Text style={styles.viewNicText}>View Filled NIC Forms</Text>
           </Pressable>
 
           <View style={styles.sectionRow}>
@@ -241,6 +250,7 @@ export default function VillageDashboardScreen() {
               <MenuRow icon="sad-outline" label="Death Certificate" onPress={() => { setMenuOpen(false); openPreview('DEATH'); }} />
               <MenuRow icon="heart-outline" label="Married Certificate" onPress={() => { setMenuOpen(false); openPreview('MARRIAGE'); }} />
               <MenuRow icon="document-text-outline" label="Fill NIC Form" onPress={openNicForm} />
+              <MenuRow icon="folder-open-outline" label="Filled NIC Forms" onPress={openFilledNic} />
               <MenuRow icon="newspaper-outline" label="News" onPress={() => goTab('News')} />
               <MenuRow icon="notifications-outline" label="Notifications" onPress={() => goTab('Notification')} />
               <MenuRow icon="person-outline" label="Profile" onPress={() => goTab('Profile')} />
@@ -315,6 +325,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   fillText: { color: colors.navy, fontSize: 16, fontWeight: '700' },
+  viewNicBtn: {
+    marginTop: 10,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: '#E4E7EE',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  viewNicText: { color: colors.navy, fontSize: 15, fontWeight: '700' },
 
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
