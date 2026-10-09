@@ -427,34 +427,6 @@ function DeathRegistrationCard({
             </Text>
           </View>
         </View>
-
-        {/* =================================================
-            BOTTOM ROW
-        ================================================== */}
-
-        <View className="mt-4 flex-row items-center justify-between">
-
-          <View className="flex-row items-center">
-            <Text className="mr-1 text-[13px] text-[#555555]">
-              □
-            </Text>
-
-            <Text className="text-[10px] text-[#555555]">
-              {registration.date}
-            </Text>
-          </View>
-
-          {/* View */}
-
-          <Pressable
-            onPress={onView}
-            className="h-[28px] min-w-[51px] items-center justify-center rounded-lg bg-[#EEEEEF] px-3 active:opacity-70"
-          >
-            <Text className="text-[10px] font-medium text-[#222222]">
-              View
-            </Text>
-          </Pressable>
-        </View>
       </View>
     </View>
   );

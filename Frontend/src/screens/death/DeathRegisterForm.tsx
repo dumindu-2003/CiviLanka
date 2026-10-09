@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
+import { DatePickerField } from "../../components/DatePickerField";
 import type { SignOffCredentials } from "../../types/auth";
 import type { DeathApplicationPayload } from "../../types/death";
 
@@ -393,16 +394,10 @@ function StepOne({
 
         <FieldLabel text="Date of Demise" />
 
-        <InputField
+        <DatePickerField
           value={form.dateOfDemise}
-          placeholder="YYYY-MM-DD"
-          onChangeText={(value) =>
-            updateField(
-              "dateOfDemise",
-              value
-            )
-          }
-          rightText="●"
+          onChangeText={(value) => updateField("dateOfDemise", value)}
+          accessibilityLabel="Date of Demise"
         />
 
         <FieldLabel text="Time of Demise" />
@@ -534,16 +529,10 @@ function StepTwo({
         {/* DOB */}
         <FieldLabel text="Date of Birth" />
 
-        <InputField
+        <DatePickerField
           value={form.dateOfBirth}
-          placeholder="YYYY-MM-DD"
-          onChangeText={(value) =>
-            updateField(
-              "dateOfBirth",
-              value
-            )
-          }
-          rightText="▣"
+          onChangeText={(value) => updateField("dateOfBirth", value)}
+          accessibilityLabel="Date of Birth"
         />
 
         {/* Age */}

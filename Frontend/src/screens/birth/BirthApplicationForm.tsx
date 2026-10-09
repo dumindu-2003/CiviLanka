@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
+import { DatePickerField } from "../../components/DatePickerField";
 import type { SignOffCredentials } from "../../types/auth";
 import type { BirthApplicationPayload } from "../../types/birth";
 
@@ -356,16 +357,10 @@ function StepOne({
           }
         />
 
-        <InputField
+        <DateInputField
           label="Date of Birth"
           value={form.birthDate}
-          placeholder="YYYY-MM-DD"
-          onChangeText={(value) =>
-            updateField(
-              "birthDate",
-              value
-            )
-          }
+          onChangeText={(value) => updateField("birthDate", value)}
         />
 
         <InputField
@@ -625,16 +620,10 @@ function StepTwo({
           }
         />
 
-        <InputField
+        <DateInputField
           label="Registration Date"
           value={form.registrationDate}
-          placeholder="YYYY-MM-DD"
-          onChangeText={(value) =>
-            updateField(
-              "registrationDate",
-              value
-            )
-          }
+          onChangeText={(value) => updateField("registrationDate", value)}
         />
 
         <View className="mt-1 rounded-md bg-[#F1F3F6] p-2">
@@ -990,6 +979,27 @@ function InputField({
           </View>
         )}
       </View>
+    </View>
+  );
+}
+
+function DateInputField({
+  label,
+  value,
+  onChangeText,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+}) {
+  return (
+    <View className="mb-3">
+      <FieldLabel label={label} />
+      <DatePickerField
+        value={value}
+        onChangeText={onChangeText}
+        accessibilityLabel={label}
+      />
     </View>
   );
 }
