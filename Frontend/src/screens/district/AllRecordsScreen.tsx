@@ -2,11 +2,15 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,10 +22,15 @@ import {
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { colors } from '../../theme/colors';
-import { getDistrictQueue } from '../../services/districtService';
+import {
+  approveApplication,
+  getDistrictQueue,
+  rejectApplication,
+} from '../../services/districtService';
 import type {
   ApplicationItem,
   Category,
+  Decision,
 } from '../../types/district';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -47,6 +56,14 @@ export default function AllRecordsScreen() {
   const [loading, setLoading] =
     useState(false);
 
+  // record + decision waiting for the authorizing officer's sign-off
+  const [target, setTarget] = useState<{
+    item: ApplicationItem;
+    decision: Decision;
+  } | null>(null);
+
+  const [saving, setSaving] = useState(false);
+
   const loadRecords = useCallback(async () => {
     setLoading(true);
 
@@ -71,6 +88,58 @@ export default function AllRecordsScreen() {
       void loadRecords();
     }, [loadRecords]),
   );
+
+  const handleConfirm = async (c: {
+    serviceNo: string;
+    username: string;
+    password: string;
+    reason: string;
+  }) => {
+    if (!target) {
+      return;
+    }
+
+    const credentials = {
+      officerUserName: c.username,
+      authorizingServiceNo: c.serviceNo,
+      officerPassword: c.password,
+    };
+
+    setSaving(true);
+
+    try {
+      if (target.decision === 'APPROVE') {
+        await approveApplication(target.item.id, credentials);
+      } else {
+        await rejectApplication(
+          target.item.id,
+          c.reason,
+          credentials,
+        );
+      }
+
+      const done =
+        target.decision === 'APPROVE'
+          ? 'approved'
+          : 'rejected';
+
+      const id = target.item.id;
+
+      setTarget(null);
+      await loadRecords();
+
+      Alert.alert('Status updated', `${id} was ${done}.`);
+    } catch (error) {
+      Alert.alert(
+        'Could not change status',
+        error instanceof Error
+          ? error.message
+          : 'Status change failed.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleFilterChange = (value: Category) => {
     if (value === filter) {
@@ -206,19 +275,42 @@ export default function AllRecordsScreen() {
               <RecordCard
                 key={`${item.category}-${item.id}`}
                 item={item}
+                onApprove={() =>
+                  setTarget({ item, decision: 'APPROVE' })
+                }
+                onReject={() =>
+                  setTarget({ item, decision: 'REJECT' })
+                }
               />
             ))}
           </View>
         )}
       </ScrollView>
+
+      <StatusChangeModal
+        visible={!!target}
+        busy={saving}
+        decision={target?.decision ?? 'APPROVE'}
+        recordId={target?.item.id ?? ''}
+        onCancel={() => {
+          if (!saving) {
+            setTarget(null);
+          }
+        }}
+        onSubmit={handleConfirm}
+      />
     </SafeAreaView>
   );
 }
 
 function RecordCard({
   item,
+  onApprove,
+  onReject,
 }: {
   item: ApplicationItem;
+  onApprove: () => void;
+  onReject: () => void;
 }) {
   const status = item.status;
 
@@ -283,7 +375,253 @@ function RecordCard({
           Submitted: {item.submittedOn || '—'}
         </Text>
       </View>
+
+      <View style={styles.actionRow}>
+        <Pressable
+          onPress={onApprove}
+          disabled={status === 'Approved'}
+          accessibilityRole="button"
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.green },
+            status === 'Approved' && styles.actionDisabled,
+          ]}
+        >
+          <Ionicons
+            name="checkmark"
+            size={14}
+            color={colors.white}
+          />
+
+          <Text style={styles.actionText}>Approve</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onReject}
+          disabled={status === 'Rejected'}
+          accessibilityRole="button"
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.red },
+            status === 'Rejected' && styles.actionDisabled,
+          ]}
+        >
+          <Ionicons
+            name="close"
+            size={14}
+            color={colors.white}
+          />
+
+          <Text style={styles.actionText}>Reject</Text>
+        </Pressable>
+      </View>
     </View>
+  );
+}
+
+// Sign-off popup: the authorizing officer confirms the status change.
+// A rejection also needs a reason.
+function StatusChangeModal({
+  visible,
+  busy,
+  decision,
+  recordId,
+  onCancel,
+  onSubmit,
+}: {
+  visible: boolean;
+  busy: boolean;
+  decision: Decision;
+  recordId: string;
+  onCancel: () => void;
+  onSubmit: (c: {
+    serviceNo: string;
+    username: string;
+    password: string;
+    reason: string;
+  }) => void;
+}) {
+  const [serviceNo, setServiceNo] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [reason, setReason] = useState('');
+
+  const reject = decision === 'REJECT';
+
+  const submit = () => {
+    if (reject && !reason.trim()) {
+      Alert.alert(
+        'Reason required',
+        'Enter the reason for rejecting this record.',
+      );
+      return;
+    }
+
+    if (!serviceNo.trim() || !username.trim() || !password) {
+      Alert.alert(
+        'Credentials required',
+        'Enter the authorizing officer service no, username and password.',
+      );
+      return;
+    }
+
+    onSubmit({
+      serviceNo: serviceNo.trim(),
+      username: username.trim(),
+      password,
+      reason: reason.trim(),
+    });
+
+    setPassword('');
+  };
+
+  const close = () => {
+    setPassword('');
+    setReason('');
+    onCancel();
+  };
+
+  return (
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={close}
+    >
+      <KeyboardAvoidingView
+        style={styles.modalBackdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalCard}>
+          <View style={styles.modalHead}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modalTitle}>
+                {reject ? 'Reject record' : 'Approve record'}
+              </Text>
+
+              <Text style={styles.modalSub}>
+                {recordId} • Digital sign-off protocol
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={close}
+              hitSlop={8}
+              accessibilityLabel="Close"
+            >
+              <Ionicons
+                name="close"
+                size={18}
+                color={colors.white}
+              />
+            </Pressable>
+          </View>
+
+          <View style={styles.modalBody}>
+            {reject ? (
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>
+                  REASON FOR REJECTION
+                </Text>
+
+                <TextInput
+                  value={reason}
+                  onChangeText={setReason}
+                  placeholder="Enter the reason"
+                  placeholderTextColor="#9A9A9A"
+                  multiline
+                  maxLength={250}
+                  style={[
+                    styles.modalInput,
+                    { minHeight: 60, textAlignVertical: 'top' },
+                  ]}
+                />
+              </View>
+            ) : null}
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>
+                AUTHORIZING OFFICER SERVICE NO
+              </Text>
+
+              <TextInput
+                value={serviceNo}
+                onChangeText={setServiceNo}
+                placeholder="e.g. DR-0001"
+                placeholderTextColor="#9A9A9A"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                style={styles.modalInput}
+              />
+            </View>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>
+                OFFICER USERNAME
+              </Text>
+
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Username"
+                placeholderTextColor="#9A9A9A"
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.modalInput}
+              />
+            </View>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>
+                OFFICER PASSWORD / PIN
+              </Text>
+
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Password or PIN"
+                placeholderTextColor="#9A9A9A"
+                autoCapitalize="none"
+                secureTextEntry
+                style={styles.modalInput}
+              />
+            </View>
+
+            <Pressable
+              onPress={submit}
+              disabled={busy}
+              accessibilityRole="button"
+              style={[
+                styles.modalSubmit,
+                {
+                  backgroundColor: reject
+                    ? colors.red
+                    : colors.green,
+                },
+                busy && { opacity: 0.6 },
+              ]}
+            >
+              <Text style={styles.modalSubmitText}>
+                {busy
+                  ? 'Submitting...'
+                  : reject
+                    ? 'Authorize & Reject'
+                    : 'Authorize & Approve'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={close}
+              disabled={busy}
+              accessibilityRole="button"
+              style={styles.modalCancel}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -499,5 +837,122 @@ const styles = StyleSheet.create({
   date: {
     color: colors.muted,
     fontSize: 10,
+  },
+
+  actionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 14,
+  },
+
+  actionButton: {
+    flex: 1,
+    height: 38,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+
+  actionDisabled: {
+    opacity: 0.35,
+  },
+
+  actionText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+
+  modalCard: {
+    borderRadius: 16,
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+
+  modalHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.navy,
+    padding: 14,
+  },
+
+  modalTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.white,
+  },
+
+  modalSub: {
+    fontSize: 10,
+    color: '#C9D1E3',
+    marginTop: 1,
+  },
+
+  modalBody: {
+    padding: 16,
+    gap: 10,
+  },
+
+  modalField: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E8EE',
+    backgroundColor: colors.field,
+    overflow: 'hidden',
+  },
+
+  modalLabel: {
+    fontSize: 8,
+    letterSpacing: 0.5,
+    color: colors.muted,
+    paddingHorizontal: 10,
+    paddingTop: 6,
+  },
+
+  modalInput: {
+    minHeight: 36,
+    fontSize: 13,
+    color: colors.text,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+
+  modalSubmit: {
+    height: 46,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+
+  modalSubmitText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.white,
+  },
+
+  modalCancel: {
+    height: 42,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.navy,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  modalCancelText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.navy,
   },
 });

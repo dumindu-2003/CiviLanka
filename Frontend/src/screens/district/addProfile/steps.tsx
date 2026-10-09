@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../../theme/colors';
 import {
   Card, DISTRICTS, EnrollForm, Field, InfoNote, NavRow, PrimaryButton, ROLES, Segmented, SectionTitle, SelectField, SetFn,
 } from '../../../components/enroll/formParts';
+import { CalendarModal } from '../../../components/enroll/CalendarModal';
 
 export interface StepProps {
   form: EnrollForm;
@@ -97,6 +98,7 @@ const choosePhoto = (set: SetFn) =>
 
 // ---------------- step 1 ----------------
 export function StepPersonal({ form, set, onNext }: StepProps) {
+  const [calendar, setCalendar] = useState(false);
   return (
     <>
       <Card>
@@ -140,7 +142,19 @@ export function StepPersonal({ form, set, onNext }: StepProps) {
           placeholder="DD / MM / YYYY"
           keyboardType="numbers-and-punctuation"
           maxLength={14}
-          rightIcon="calendar-outline"
+          right={
+            <Pressable
+              onPress={() => {
+                Keyboard.dismiss();
+                setCalendar(true);
+              }}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Open calendar"
+            >
+              <Ionicons name="calendar-outline" size={17} color={colors.navy} />
+            </Pressable>
+          }
         />
 
         <View>
@@ -173,6 +187,16 @@ export function StepPersonal({ form, set, onNext }: StepProps) {
 
       <PrimaryButton label="Continue to Contact Details" onPress={onNext} />
       <Text style={s.stepCaption}>Step 1 of 5 • Next: Contact & Residential Info</Text>
+
+      <CalendarModal
+        visible={calendar}
+        value={form.dob}
+        onSelect={(v) => {
+          set('dob', v);
+          setCalendar(false);
+        }}
+        onClose={() => setCalendar(false)}
+      />
     </>
   );
 }

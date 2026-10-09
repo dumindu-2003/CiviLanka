@@ -28,8 +28,8 @@ export default function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={Dashboard} options={{ headerShown: false }} />
-      <Tab.Screen name="News" component={NewsScreen} />
-      <Tab.Screen name="Notification" component={NotificationScreen} />
+      <Tab.Screen name="News" component={NewsScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Notification" component={NotificationScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Profile" component={MyProfileScreen} />
     </Tab.Navigator>
   );

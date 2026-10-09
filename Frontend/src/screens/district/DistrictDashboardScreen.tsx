@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -128,6 +128,7 @@ export default function DistrictDashboardScreen() {
   const user = useAppSelector((s) => s.auth.user);
 
   const [pending, setPending] = useState<{ id: string; decision: Decision } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -153,6 +154,12 @@ export default function DistrictDashboardScreen() {
     else soon(a.label);
   };
 
+  // menu item: close the side menu first, then open the screen
+  const runMenuAction = (a: (typeof ACTIONS)[number]) => {
+    setMenuOpen(false);
+    runAction(a);
+  };
+
   const roleTitle = user?.designation || 'District Registrar';
 
   return (
@@ -162,7 +169,7 @@ export default function DistrictDashboardScreen() {
       {/* App bar */}
       <SafeAreaView edges={['top']} style={styles.top}>
         <View style={styles.appBar}>
-          <Pressable style={styles.menuBtn} onPress={() => soon('Menu')} accessibilityLabel="Menu">
+          <Pressable style={styles.menuBtn} onPress={() => setMenuOpen(true)} accessibilityLabel="Menu">
             <Ionicons name="menu" size={24} color={colors.white} />
           </Pressable>
           <Text style={styles.appBarTitle} numberOfLines={1}>
@@ -302,6 +309,33 @@ export default function DistrictDashboardScreen() {
         </View>
       </ScrollView>
 
+      {/* Side menu (the hamburger button) */}
+      <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+        <View style={styles.menuRoot}>
+          <SafeAreaView edges={['top', 'bottom']} style={styles.menuPanel}>
+            <View style={styles.menuHead}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuTitle}>{roleTitle}</Text>
+                <Text style={styles.menuSub}>Civil registration menu</Text>
+              </View>
+              <Pressable onPress={() => setMenuOpen(false)} hitSlop={10} accessibilityLabel="Close menu">
+                <Ionicons name="close" size={22} color={colors.white} />
+              </Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {ACTIONS.map((a) => (
+                <Pressable key={a.label} onPress={() => runMenuAction(a)} accessibilityRole="button" style={styles.menuItem}>
+                  <Ionicons name={a.icon} size={18} color={colors.white} />
+                  <Text style={styles.menuItemText}>{a.label}</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#8FA0C4" />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </SafeAreaView>
+          <Pressable style={styles.menuScrim} onPress={() => setMenuOpen(false)} accessibilityLabel="Close menu" />
+        </View>
+      </Modal>
+
       <AuthorizeSignOffModal
         visible={!!pending}
         title={pending?.decision === 'APPROVE' ? 'Authorize Approval' : 'Authorize Rejection'}
@@ -430,6 +464,31 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   qBtnText: { color: colors.white, fontSize: 12, fontWeight: '500' },
+
+  // side menu
+  menuRoot: { flex: 1, flexDirection: 'row' },
+  menuPanel: { width: '78%', backgroundColor: colors.navy },
+  menuScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  menuHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.15)',
+  },
+  menuTitle: { fontSize: 17, fontWeight: '700', color: colors.white },
+  menuSub: { fontSize: 11, color: '#AEB8D0', marginTop: 2 },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  menuItemText: { flex: 1, fontSize: 14, fontWeight: '500', color: colors.white },
 
   // quick actions
   actions: { marginTop: 28, gap: 5 },
