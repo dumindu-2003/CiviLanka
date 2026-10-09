@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -37,23 +37,22 @@ export function PressButton({
   textStyle,
   color = colors.white,
 }: Props) {
+  const [pressed, setPressed] = useState(false);
+  const active = pressed && !disabled;
+  const fg = active ? colors.navy : color;
+
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled, selected: !!selected }}
-      style={({ pressed }) => [style, pressed && !disabled && styles.pressed]}
+      style={[style, active && styles.pressed]}
     >
-      {({ pressed }) => {
-        const fg = pressed && !disabled ? colors.navy : color;
-        return (
-          <>
-            {icon ? <Ionicons name={icon} size={iconSize} color={fg} /> : null}
-            <Text style={[textStyle, { color: fg }]}>{label}</Text>
-          </>
-        );
-      }}
+      {icon ? <Ionicons name={icon} size={iconSize} color={fg} /> : null}
+      <Text style={[textStyle, { color: fg }]}>{label}</Text>
     </Pressable>
   );
 }

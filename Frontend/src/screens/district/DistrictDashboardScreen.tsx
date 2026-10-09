@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, Modal, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { decideApplication, loadDashboard } from '../../actions/districtAction';
 import { AuthorizeSignOffModal } from '../../components/AuthorizeSignOffModal';
+import { PressButton, PRESS_YELLOW } from '../../components/PressButton';
 import type { Status } from '../../components/StatusBadge';
 import type { RootStackParamList } from '../../navigation/types';
 import type { SignOffCredentials } from '../../types/auth';
@@ -109,20 +110,38 @@ function QueueButton({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
+    <PressButton
+      label={label}
+      icon={icon}
+      iconSize={14}
       onPress={onPress}
       disabled={disabled}
-      accessibilityRole="button"
       style={[styles.qBtn, { backgroundColor: bg, opacity: disabled ? 0.4 : 1 }]}
+      textStyle={styles.qBtnText}
+    />
+  );
+}
+
+function MenuRow({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      accessibilityRole="button"
+      style={[styles.menuItem, pressed && { backgroundColor: PRESS_YELLOW }]}
     >
-      <Ionicons name={icon} size={14} color={colors.white} />
-      <Text style={styles.qBtnText}>{label}</Text>
+      <Ionicons name={icon} size={20} color={colors.navy} />
+      <Text style={styles.menuItemText}>{label}</Text>
+      <Ionicons name="chevron-forward" size={18} color={colors.muted} />
     </Pressable>
   );
 }
 
 export default function DistrictDashboardScreen() {
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { summary, queue, category, status, error } = useAppSelector((s) => s.district);
   const user = useAppSelector((s) => s.auth.user);
@@ -223,15 +242,14 @@ export default function DistrictDashboardScreen() {
         </View>
         <View style={styles.chips}>
           {CATEGORIES.map((c) => (
-            <Pressable
+            <PressButton
               key={c}
+              label={c}
               onPress={() => dispatch(loadDashboard(c))}
-              accessibilityRole="button"
-              accessibilityState={{ selected: c === category }}
+              selected={c === category}
               style={[styles.chip, c === category && styles.chipActive]}
-            >
-              <Text style={styles.chipText}>{c}</Text>
-            </Pressable>
+              textStyle={styles.chipText}
+            />
           ))}
         </View>
 
@@ -301,10 +319,14 @@ export default function DistrictDashboardScreen() {
         {/* Quick actions */}
         <View style={styles.actions}>
           {ACTIONS.map((a) => (
-            <Pressable key={a.label} onPress={() => runAction(a)} accessibilityRole="button" style={styles.actionBtn}>
-              <Ionicons name={a.icon} size={16} color={colors.white} />
-              <Text style={styles.actionText}>{a.label}</Text>
-            </Pressable>
+            <PressButton
+              key={a.label}
+              label={a.label}
+              icon={a.icon}
+              onPress={() => runAction(a)}
+              style={styles.actionBtn}
+              textStyle={styles.actionText}
+            />
           ))}
         </View>
       </ScrollView>
@@ -312,8 +334,8 @@ export default function DistrictDashboardScreen() {
       {/* Side menu (the hamburger button) */}
       <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={() => setMenuOpen(false)}>
         <View style={styles.menuRoot}>
-          <SafeAreaView edges={['top', 'bottom']} style={styles.menuPanel}>
-            <View style={styles.menuHead}>
+          <View style={styles.menuPanel}>
+            <View style={[styles.menuHead, { paddingTop: insets.top + 18 }]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.menuTitle}>{roleTitle}</Text>
                 <Text style={styles.menuSub}>Civil registration menu</Text>
@@ -322,16 +344,14 @@ export default function DistrictDashboardScreen() {
                 <Ionicons name="close" size={22} color={colors.white} />
               </Pressable>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {ACTIONS.map((a) => (
-                <Pressable key={a.label} onPress={() => runMenuAction(a)} accessibilityRole="button" style={styles.menuItem}>
-                  <Ionicons name={a.icon} size={18} color={colors.white} />
-                  <Text style={styles.menuItemText}>{a.label}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#8FA0C4" />
-                </Pressable>
-              ))}
-            </ScrollView>
-          </SafeAreaView>
+            <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {ACTIONS.map((a) => (
+                  <MenuRow key={a.label} icon={a.icon} label={a.label} onPress={() => runMenuAction(a)} />
+                ))}
+              </ScrollView>
+            </SafeAreaView>
+          </View>
           <Pressable style={styles.menuScrim} onPress={() => setMenuOpen(false)} accessibilityLabel="Close menu" />
         </View>
       </Modal>
@@ -465,30 +485,29 @@ const styles = StyleSheet.create({
   },
   qBtnText: { color: colors.white, fontSize: 12, fontWeight: '500' },
 
-  // side menu
+  // side menu (white panel + navy header, same as the Grama Niladhari drawer)
   menuRoot: { flex: 1, flexDirection: 'row' },
-  menuPanel: { width: '78%', backgroundColor: colors.navy },
-  menuScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  menuPanel: { width: 280, maxWidth: '82%', backgroundColor: colors.card },
+  menuScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
   menuHead: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.navy,
     paddingHorizontal: 18,
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.15)',
+    paddingBottom: 20,
   },
-  menuTitle: { fontSize: 17, fontWeight: '700', color: colors.white },
+  menuTitle: { fontSize: 18, fontWeight: '700', color: colors.white },
   menuSub: { fontSize: 11, color: '#AEB8D0', marginTop: 2 },
   menuItem: {
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  menuItemText: { flex: 1, fontSize: 14, fontWeight: '500', color: colors.white },
+  menuItemText: { flex: 1, fontSize: 16, fontWeight: '500', color: colors.text },
 
   // quick actions
   actions: { marginTop: 28, gap: 5 },
