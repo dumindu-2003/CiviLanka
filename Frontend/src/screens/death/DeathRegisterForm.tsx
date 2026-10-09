@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
 import { DatePickerField } from "../../components/DatePickerField";
+import { errorMessage } from "../../utils/errorMessage";
 import type { SignOffCredentials } from "../../types/auth";
 import type { DeathApplicationPayload } from "../../types/death";
 
@@ -84,7 +85,7 @@ export default function DeathRegisterForm({
     } catch (error) {
       Alert.alert(
         "Unable to update application",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
@@ -108,7 +109,7 @@ export default function DeathRegisterForm({
     } catch (error) {
       Alert.alert(
         "Unable to save draft",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
@@ -124,7 +125,7 @@ export default function DeathRegisterForm({
     } catch (error) {
       Alert.alert(
         "Unable to submit application",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
