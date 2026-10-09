@@ -2,3 +2,8 @@
 10/03/2026 22:21:08 ~ Login ~ Login failed for user 'DEKSTOP-310HI4U\ASUS'. (18456) (SQLDriverConnect); [28000] [Microsoft][ODBC Driver 17 for SQL Server];
 10/03/2026 22:21:19 ~ Login ~ Login failed for user 'DEKSTOP-310HI4U\ASUS'. (18456) (SQLDriverConnect); [28000] [Microsoft][ODBC Driver 17 for SQL Server];
 10/03/2026 22:24:24 ~ Login ~ Unknown action_type for sp_auth.;
+10/09/2026 21:41:49 ~ Update ~ Record not found, or it can no longer be edited.;
+10/09/2026 21:43:20 ~ Update ~ Record not found, or it can no longer be edited.;
+10/09/2026 21:43:22 ~ Update ~ Record not found, or it can no longer be edited.;
+10/09/2026 21:46:04 ~ Reject ~ A rejection reason is required.;
+10/09/2026 21:46:36 ~ Approve ~ The UPDATE statement conflicted with the FOREIGN KEY constraint "FK__death_cer__appro__40F9A68C". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.district_registrar", column 'district_registrar_id'.;
