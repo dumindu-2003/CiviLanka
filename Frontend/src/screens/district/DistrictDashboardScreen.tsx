@@ -295,7 +295,15 @@ export default function DistrictDashboardScreen() {
                   label="View"
                   icon="eye-outline"
                   bg={colors.navy}
-                  onPress={() => nav.navigate('NicApplicationReview', { applicationId: item.id })}
+                  onPress={() =>
+                    nav.navigate('DistrictApplicationDetail', {
+                      applicationId: item.id,
+                      category: item.category,
+                      applicantName: item.applicantName,
+                      submittedOn: item.submittedOn,
+                      status: item.status,
+                    })
+                  }
                 />
                 <QueueButton
                   label="Approve"

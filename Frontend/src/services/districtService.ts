@@ -29,7 +29,7 @@ const normalizeSummary = (row: Record<string, any>): DashboardSummary => ({
 });
 
 const normalizeQueueItem = (row: Record<string, any>): ApplicationItem => ({
-  id: String(pick(row, 'id', 'app_ref', 'application_ref', 'applicationId', 'application_id') ?? ''),
+  id: String(pick(row, 'app_ref', 'application_ref', 'applicationId', 'application_id', 'id') ?? ''),
   category: (pick(row, 'category', 'application_type', 'type') ?? 'Birth') as ApplicationItem['category'],
   applicantName: String(pick(row, 'applicantName', 'applicant_name', 'citizenName', 'full_name', 'name') ?? 'Unknown applicant'),
   submittedOn: String(pick(row, 'submittedOn', 'submitted_on', 'created_at', 'submitted_date') ?? ''),

@@ -10,6 +10,13 @@ export type RootStackParamList = {
 
   NicPendingList: undefined;
   NicApplicationReview: { applicationId: string };
+  DistrictApplicationDetail: {
+    applicationId: string;
+    category: 'Birth' | 'Death' | 'Marriage';
+    applicantName: string;
+    submittedOn: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+  };
   NicPersonalDetails: undefined;
   NicContactFamily: undefined;
   NicDocuments: undefined;

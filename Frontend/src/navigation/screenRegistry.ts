@@ -13,6 +13,7 @@ import ReportsScreen from '../screens/district/ReportsScreen';
 import AllRecordsScreen from '../screens/district/AllRecordsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
 import NicApplicationReviewScreen from '../screens/district/NicApplicationReviewScreen';
+import DistrictApplicationDetailScreen from '../screens/district/DistrictApplicationDetailScreen';
 import NicPersonalDetailsScreen from '../screens/village/NicPersonalDetailsScreen';
 import NicContactFamilyScreen from '../screens/village/NicContactFamilyScreen';
 import NicDocumentsScreen from '../screens/village/NicDocumentsScreen';
@@ -103,6 +104,12 @@ export const stackScreens: Record<
   NicApplicationReview: {
     component: NicApplicationReviewScreen,
     title: 'NIC Application Review',
+    headerShown: false,
+  },
+
+  DistrictApplicationDetail: {
+    component: DistrictApplicationDetailScreen,
+    title: 'Application Details',
     headerShown: false,
   },
 
