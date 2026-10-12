@@ -25,6 +25,7 @@ import type {
 
 type Props = {
   onBack: () => void;
+  initialApplicationId?: string | null;
 };
 
 function toDeathPayload(application: DeathApplication): DeathApplicationPayload {
@@ -66,11 +67,11 @@ function toDeathPayload(application: DeathApplication): DeathApplicationPayload 
 
 export default function AllDeathApplications({
   onBack,
+  initialApplicationId,
 }: Props) {
   const dispatch = useAppDispatch();
   const applications = useAppSelector((state) => state.death.queue);
   const status = useAppSelector((state) => state.death.status);
-
   const [selectedApplication, setSelectedApplication] =
     useState<DeathApplication | null>(null);
   const [editingApplication, setEditingApplication] = useState(false);
@@ -96,6 +97,30 @@ export default function AllDeathApplications({
       );
     }
   };
+
+  useEffect(() => {
+    if (!initialApplicationId) return;
+    let active = true;
+    dispatch(getDeathApplication(initialApplicationId))
+      .unwrap()
+      .then((application) => {
+        if (active) {
+          setSelectedApplication(application);
+          setEditingApplication(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          Alert.alert(
+            "Unable to open application",
+            error instanceof Error ? error.message : "Please try again."
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [dispatch, initialApplicationId]);
 
   /* =======================================================
      UPDATE APPLICATION
@@ -144,7 +169,7 @@ export default function AllDeathApplications({
 
   const total = applications.length;
 
-  const open = applications.filter((item) => item.status === "Draft").length;
+  const open = applications.filter((item) => item.status === "Pending").length;
 
   const approved = applications.filter(
     (item) => item.status === "Approved"
@@ -240,7 +265,7 @@ export default function AllDeathApplications({
 
           <View className="w-[23.5%] rounded-xl border border-[#E2E5E9] bg-white p-3">
             <Text className="text-[9px] text-[#737B87]">
-              Open
+              Pending
             </Text>
 
             <Text className="mt-1 text-[21px] font-bold text-[#0B2855]">

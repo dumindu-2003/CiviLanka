@@ -28,6 +28,7 @@ export default function DeathTestScreen() {
 
   const [showAllApplications, setShowAllApplications] =
     useState(false);
+  const [applicationToOpen, setApplicationToOpen] = useState<string | null>(null);
 
   useEffect(() => {
     void dispatch(loadDeathApplications());
@@ -73,7 +74,11 @@ export default function DeathTestScreen() {
   if (showAllApplications) {
     return (
       <AllDeathApplications
-        onBack={() => setShowAllApplications(false)}
+        onBack={() => {
+          setShowAllApplications(false);
+          setApplicationToOpen(null);
+        }}
+        initialApplicationId={applicationToOpen}
       />
     );
   }
@@ -87,15 +92,12 @@ export default function DeathTestScreen() {
   };
 
   const handleViewCertificates = () => {
+    setApplicationToOpen(null);
     setShowAllApplications(true);
   };
 
   const handleViewApplication = (id: string) => {
-    console.log("View Death Application:", id);
-
-    // Open the All Applications screen.
-    // The individual application can then be opened
-    // using its View Application button.
+    setApplicationToOpen(id);
     setShowAllApplications(true);
   };
 

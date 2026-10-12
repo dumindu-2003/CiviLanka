@@ -25,6 +25,7 @@ import type {
 
 type Props = {
   onBack: () => void;
+  initialApplicationId?: string | null;
 };
 
 function toBirthPayload(application: BirthApplication): BirthApplicationPayload {
@@ -66,7 +67,7 @@ function toBirthPayload(application: BirthApplication): BirthApplicationPayload 
   };
 }
 
-export default function AllBirthAplications({ onBack }: Props) {
+export default function AllBirthAplications({ onBack, initialApplicationId }: Props) {
   const dispatch = useAppDispatch();
   const registrations = useAppSelector((state) => state.birth.queue);
   const status = useAppSelector((state) => state.birth.status);
@@ -90,6 +91,30 @@ export default function AllBirthAplications({ onBack }: Props) {
       );
     }
   };
+
+  useEffect(() => {
+    if (!initialApplicationId) return;
+    let active = true;
+    dispatch(getBirthApplication(initialApplicationId))
+      .unwrap()
+      .then((application) => {
+        if (active) {
+          setSelectedApplication(application);
+          setEditingApplication(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          Alert.alert(
+            "Unable to open application",
+            error instanceof Error ? error.message : "Please try again."
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [dispatch, initialApplicationId]);
 
   // If an application is selected,
   // show UpdateBirthApplication screen
@@ -129,7 +154,7 @@ export default function AllBirthAplications({ onBack }: Props) {
   // Counts
   const totalCount = registrations.length;
 
-  const openCount = registrations.filter((item) => item.status === "Draft").length;
+  const openCount = registrations.filter((item) => item.status === "Pending").length;
 
   const approvedCount = registrations.filter(
     (item) => item.status === "Approved"
@@ -213,7 +238,7 @@ export default function AllBirthAplications({ onBack }: Props) {
           {/* Open */}
           <View className="flex-1 rounded-xl border border-[#E3E7ED] bg-white p-3">
             <Text className="text-[10px] text-[#737B87]">
-              Open
+              Pending
             </Text>
 
             <Text className="mt-1 text-[22px] font-bold text-[#0B2855]">
