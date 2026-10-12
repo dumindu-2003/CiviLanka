@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
+import { DatePickerField } from "../../components/DatePickerField";
+import { errorMessage } from "../../utils/errorMessage";
 import type { SignOffCredentials } from "../../types/auth";
 import type { BirthApplicationPayload } from "../../types/birth";
 
@@ -89,7 +91,7 @@ export default function BirthApplicationForm({
     } catch (error) {
       Alert.alert(
         "Unable to save draft",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
@@ -104,7 +106,7 @@ export default function BirthApplicationForm({
       } catch (error) {
         Alert.alert(
           "Unable to update application",
-          error instanceof Error ? error.message : "Please try again."
+          errorMessage(error)
         );
       } finally {
         setSaving(false);
@@ -123,7 +125,7 @@ export default function BirthApplicationForm({
     } catch (error) {
       Alert.alert(
         "Unable to submit application",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
@@ -356,20 +358,16 @@ function StepOne({
           }
         />
 
-        <InputField
+        <DateInputField
           label="Date of Birth"
           value={form.birthDate}
-          onChangeText={(value) =>
-            updateField(
-              "birthDate",
-              value
-            )
-          }
+          onChangeText={(value) => updateField("birthDate", value)}
         />
 
         <InputField
           label="Time of Birth"
           value={form.birthTime}
+          placeholder="HH:mm"
           onChangeText={(value) =>
             updateField(
               "birthTime",
@@ -623,15 +621,10 @@ function StepTwo({
           }
         />
 
-        <InputField
+        <DateInputField
           label="Registration Date"
           value={form.registrationDate}
-          onChangeText={(value) =>
-            updateField(
-              "registrationDate",
-              value
-            )
-          }
+          onChangeText={(value) => updateField("registrationDate", value)}
         />
 
         <View className="mt-1 rounded-md bg-[#F1F3F6] p-2">
@@ -929,6 +922,7 @@ function InputField({
   rightLabel,
   value,
   onChangeText,
+  placeholder,
   multiline = false,
   keyboardType = "default",
   required = false,
@@ -938,6 +932,7 @@ function InputField({
   rightLabel?: string;
   value: string;
   onChangeText: (value: string) => void;
+  placeholder?: string;
   multiline?: boolean;
   keyboardType?: "default" | "numeric" | "phone-pad";
   required?: boolean;
@@ -961,6 +956,7 @@ function InputField({
         <TextInput
           value={value}
           onChangeText={onChangeText}
+          placeholder={placeholder}
           multiline={multiline}
           keyboardType={keyboardType}
           textAlignVertical={
@@ -984,6 +980,27 @@ function InputField({
           </View>
         )}
       </View>
+    </View>
+  );
+}
+
+function DateInputField({
+  label,
+  value,
+  onChangeText,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+}) {
+  return (
+    <View className="mb-3">
+      <FieldLabel label={label} />
+      <DatePickerField
+        value={value}
+        onChangeText={onChangeText}
+        accessibilityLabel={label}
+      />
     </View>
   );
 }

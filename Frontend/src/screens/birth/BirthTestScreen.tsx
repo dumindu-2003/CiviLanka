@@ -263,37 +263,6 @@ export default function BirthTestScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* =====================================================
-          BOTTOM NAVIGATION
-      ====================================================== */}
-
-      <View className="h-[64px] flex-row border-t border-[#E5E7EB] bg-white">
-        <BottomNavItem
-          icon="⌂"
-          label="Home"
-          active
-          onPress={() => console.log("Home")}
-        />
-
-        <BottomNavItem
-          icon="▣"
-          label="News"
-          onPress={() => console.log("News")}
-        />
-
-        <BottomNavItem
-          icon="♧"
-          label="Notification"
-          onPress={() => console.log("Notification")}
-        />
-
-        <BottomNavItem
-          icon="♙"
-          label="Profile"
-          onPress={() => console.log("Profile")}
-        />
-      </View>
     </SafeAreaView>
   );
 }
@@ -413,50 +382,5 @@ function RegistrationCard({
         </Pressable>
       </View>
     </View>
-  );
-}
-
-/* =========================================================
-   BOTTOM NAV ITEM
-========================================================= */
-
-type BottomNavItemProps = {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onPress: () => void;
-};
-
-function BottomNavItem({
-  icon,
-  label,
-  active = false,
-  onPress,
-}: BottomNavItemProps) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-1 items-center justify-center active:opacity-70"
-    >
-      <Text
-        className={`text-[20px] ${
-          active
-            ? "text-[#0B2855]"
-            : "text-[#687385]"
-        }`}
-      >
-        {icon}
-      </Text>
-
-      <Text
-        className={`mt-1 text-[9px] ${
-          active
-            ? "font-semibold text-[#0B2855]"
-            : "text-[#687385]"
-        }`}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }

@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthorizeSignOffModal } from "../../components/AuthorizeSignOffModal";
+import { DatePickerField } from "../../components/DatePickerField";
+import { errorMessage } from "../../utils/errorMessage";
 import type { SignOffCredentials } from "../../types/auth";
 import type { DeathApplicationPayload } from "../../types/death";
 
@@ -83,7 +85,7 @@ export default function DeathRegisterForm({
     } catch (error) {
       Alert.alert(
         "Unable to update application",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
@@ -107,7 +109,7 @@ export default function DeathRegisterForm({
     } catch (error) {
       Alert.alert(
         "Unable to save draft",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
@@ -123,7 +125,7 @@ export default function DeathRegisterForm({
     } catch (error) {
       Alert.alert(
         "Unable to submit application",
-        error instanceof Error ? error.message : "Please try again."
+        errorMessage(error)
       );
     } finally {
       setSaving(false);
@@ -393,21 +395,17 @@ function StepOne({
 
         <FieldLabel text="Date of Demise" />
 
-        <InputField
+        <DatePickerField
           value={form.dateOfDemise}
-          onChangeText={(value) =>
-            updateField(
-              "dateOfDemise",
-              value
-            )
-          }
-          rightText="●"
+          onChangeText={(value) => updateField("dateOfDemise", value)}
+          accessibilityLabel="Date of Demise"
         />
 
         <FieldLabel text="Time of Demise" />
 
         <InputField
           value={form.timeOfDemise}
+          placeholder="HH:mm"
           onChangeText={(value) =>
             updateField(
               "timeOfDemise",
@@ -532,15 +530,10 @@ function StepTwo({
         {/* DOB */}
         <FieldLabel text="Date of Birth" />
 
-        <InputField
+        <DatePickerField
           value={form.dateOfBirth}
-          onChangeText={(value) =>
-            updateField(
-              "dateOfBirth",
-              value
-            )
-          }
-          rightText="▣"
+          onChangeText={(value) => updateField("dateOfBirth", value)}
+          accessibilityLabel="Date of Birth"
         />
 
         {/* Age */}

@@ -33,7 +33,7 @@
         }
       ],
       "expo-secure-store",
-      "expo-sharing"
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "reactCompiler": true
