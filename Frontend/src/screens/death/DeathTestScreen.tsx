@@ -4,11 +4,9 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  StatusBar,
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import DeathRegisterForm from "./DeathRegisterForm";
 import AllDeathApplications from "./AllDeathApplications";
@@ -101,221 +99,78 @@ export default function DeathTestScreen() {
     setShowAllApplications(true);
   };
 
-  const draftCount = registrations.filter((item) => item.status === "Draft").length;
+  const rejectedCount = registrations.filter((item) => item.status === "Rejected").length;
   const pendingCount = registrations.filter((item) => item.status === "Pending").length;
   const approvedCount = registrations.filter((item) => item.status === "Approved").length;
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-white"
-      edges={["top", "bottom"]}
+    <ScrollView
+      className="flex-1 bg-[#F8F9FB]"
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 20 }}
     >
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#FFFFFF"
-      />
-
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
-      <View className="h-[58px] flex-row items-center border-b border-[#EEEEEE] bg-white px-5">
-        {/* Menu */}
-
-        <Pressable
-          className="h-[36px] w-[36px] items-center justify-center"
-          onPress={() => console.log("Menu")}
-        >
-          <Text className="text-[23px] text-[#222222]">
-            ☰
-          </Text>
-        </Pressable>
-
-        {/* Title */}
-
-        <View className="flex-1 items-center">
-          <Text className="text-[16px] font-bold text-[#171717]">
-            Death Registrar
-          </Text>
-        </View>
-
-        {/* Profile */}
-
-        <Pressable
-          className="h-[29px] w-[29px] items-center justify-center rounded-full bg-black"
-          onPress={() => console.log("Profile")}
-        >
-          <Text className="text-[14px] text-white">
-            ♙
-          </Text>
-        </Pressable>
+      <View className="px-4 pb-3 pt-10">
+        <Text className="text-[20px] font-bold text-[#222222]">
+          Welcome, Death Registrar
+        </Text>
+        <Text className="mt-1 text-[13px] text-[#555555]">
+          Manage death registrations
+        </Text>
       </View>
 
-      {/* =====================================================
-          CONTENT
-      ====================================================== */}
+      <View className="mx-3 flex-row rounded-xl border border-[#E1E5EA] bg-white p-1 shadow-sm">
+        <StatCard
+          icon="⌛"
+          number={String(pendingCount)}
+          description="Pending"
+          iconColor="#B76E00"
+        />
+        <StatCard
+          icon="✓"
+          number={String(approvedCount)}
+          description="Approved"
+          iconColor="#16804B"
+        />
+        <StatCard
+          icon="×"
+          number={String(rejectedCount)}
+          description="Rejected"
+          iconColor="#C62828"
+        />
+      </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 22,
-          paddingTop: 18,
-          paddingBottom: 30,
-        }}
-      >
-        {/* =================================================
-            WELCOME
-        ================================================== */}
-
-        <View className="mb-5">
-          <Text className="text-[20px] font-bold text-[#171717]">
-            Welcome, Death Registrar
-          </Text>
-
-          <Text className="mt-1 text-[12px] text-[#666666]">
-            Manage death registrations
-          </Text>
-        </View>
-
-        {/* =================================================
-            STATISTICS
-        ================================================== */}
-
-        <View className="mb-5 flex-row justify-between">
-
-          {/* NEW */}
-
-          <View className="h-[104px] w-[31%] rounded-xl bg-[#F1F1F3] px-3 py-3">
-            <View className="flex-row items-center justify-between">
-              <View className="h-[24px] w-[24px] items-center justify-center rounded-md bg-[#E2E2E4]">
-                <Text className="text-[13px] text-[#222222]">
-                  ▣
-                </Text>
-              </View>
-
-              <Text className="text-[8px] font-bold text-[#555555]">
-                NEW
-              </Text>
-            </View>
-
-            <Text className="mt-2 text-[24px] font-bold text-[#171717]">
-              {draftCount}
-            </Text>
-
-            <Text className="text-[9px] text-[#555555]">
-              New
-            </Text>
-
-            <Text className="text-[9px] text-[#555555]">
-              Registrations
-            </Text>
-          </View>
-
-          {/* WAIT */}
-
-          <View className="h-[104px] w-[31%] rounded-xl bg-[#F1F1F3] px-3 py-3">
-            <View className="flex-row items-center justify-between">
-              <View className="h-[24px] w-[24px] items-center justify-center rounded-md bg-[#E2E2E4]">
-                <Text className="text-[14px] text-[#222222]">
-                  ⌛
-                </Text>
-              </View>
-
-              <Text className="text-[8px] font-bold text-[#555555]">
-                WAIT
-              </Text>
-            </View>
-
-            <Text className="mt-2 text-[24px] font-bold text-[#171717]">
-              {pendingCount}
-            </Text>
-
-            <Text className="text-[9px] text-[#555555]">
-              Pending
-            </Text>
-
-            <Text className="text-[9px] text-[#555555]">
-              Approval
-            </Text>
-          </View>
-
-          {/* DONE */}
-
-          <View className="h-[104px] w-[31%] rounded-xl bg-[#F1F1F3] px-3 py-3">
-            <View className="flex-row items-center justify-between">
-              <View className="h-[24px] w-[24px] items-center justify-center rounded-md bg-[#E2E2E4]">
-                <Text className="text-[13px] text-[#222222]">
-                  ✓
-                </Text>
-              </View>
-
-              <Text className="text-[8px] font-bold text-[#555555]">
-                DONE
-              </Text>
-            </View>
-
-            <Text className="mt-2 text-[24px] font-bold text-[#171717]">
-              {approvedCount}
-            </Text>
-
-            <Text className="text-[9px] text-[#555555]">
-              Approved
-            </Text>
-          </View>
-        </View>
-
-        {/* =================================================
-            NEW DEATH REGISTRATION
-        ================================================== */}
-
+      <View className="px-3 pt-4">
         <Pressable
           onPress={handleNewRegistration}
-          className="mb-2.5 h-[42px] flex-row items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
+          className="h-[48px] flex-row items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
         >
-          <Text className="mr-2 text-[19px] text-white">
-            ⊕
-          </Text>
-
-          <Text className="text-[12px] font-medium text-white">
+          <Text className="mr-2 text-[20px] text-white">⊕</Text>
+          <Text className="text-[14px] font-medium text-white">
             New Death Registration
           </Text>
         </Pressable>
 
-        {/* =================================================
-            VIEW ALL DEATH CERTIFICATES
-        ================================================== */}
-
         <Pressable
           onPress={handleViewCertificates}
-          className="mb-5 h-[42px] flex-row items-center justify-center rounded-lg bg-[#E7E7E9] active:opacity-80"
+          className="mt-1 h-[48px] flex-row items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
         >
-          <Text className="mr-2 text-[16px] text-[#222222]">
-            ▣
-          </Text>
-
-          <Text className="text-[12px] font-medium text-[#222222]">
+          <Text className="mr-2 text-[17px] text-white">▣</Text>
+          <Text className="text-[14px] font-medium text-white">
             View All Death Certificates
           </Text>
         </Pressable>
+      </View>
 
-        {/* =================================================
-            RECENT REGISTRATIONS
-        ================================================== */}
+      <View className="mt-6 flex-row items-center justify-between px-4">
+        <Text className="text-[15px] font-bold text-[#292929]">
+          Recent Registrations
+        </Text>
+        <Text className="text-[10px] text-[#777777]">
+          Showing {Math.min(registrations.length, 5)} latest
+        </Text>
+      </View>
 
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-[16px] font-bold text-[#171717]">
-            Recent Registrations
-          </Text>
-
-          <Text className="text-[10px] text-[#555555]">
-            Showing {Math.min(registrations.length, 5)} latest
-          </Text>
-        </View>
-
-        {/* =================================================
-            REGISTRATION CARDS
-        ================================================== */}
-
+      <View className="px-3">
         {status === "loading" && registrations.length === 0 ? (
           <ActivityIndicator className="mt-4" />
         ) : registrations.slice(0, 5).map((item) => (
@@ -327,9 +182,7 @@ export default function DeathTestScreen() {
               date: item.submittedOn,
               status: item.status,
             }}
-            onView={() =>
-              handleViewApplication(item.id)
-            }
+            onView={() => handleViewApplication(item.id)}
           />
         ))}
         {status === "failed" && registrations.length === 0 && (
@@ -337,8 +190,31 @@ export default function DeathTestScreen() {
             Unable to load death applications.
           </Text>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
+  );
+}
+
+type StatCardProps = {
+  icon: string;
+  number: string;
+  description: string;
+  iconColor: string;
+};
+
+function StatCard({ icon, number, description, iconColor }: StatCardProps) {
+  return (
+    <View className="flex-1 items-center px-2 py-3">
+      <Text className="text-[18px]" style={{ color: iconColor }}>
+        {icon}
+      </Text>
+      <Text className="mt-1 text-[21px] font-bold text-[#222222]">
+        {number}
+      </Text>
+      <Text className="text-center text-[11px] text-[#888888]">
+        {description}
+      </Text>
+    </View>
   );
 }
 
@@ -360,73 +236,68 @@ function DeathRegistrationCard({
   registration,
   onView,
 }: CardProps) {
-  const isApproved =
-    registration.status === "Approved";
-
-  const isRejected =
-    registration.status === "Rejected";
+  const isPending = registration.status === "Pending";
+  const isApproved = registration.status === "Approved";
+  const isRejected = registration.status === "Rejected";
+  const statusLabel = registration.status === "Draft" ? "Open" : registration.status;
 
   return (
-    <View className="mb-2 overflow-hidden rounded-xl border border-[#EEEEEE] bg-white">
-      <View className="px-3.5 py-3.5">
-
-        {/* =================================================
-            TOP ROW
-        ================================================== */}
-
-        <View className="flex-row items-center">
-
-          {/* ID */}
-
-          <View className="rounded-full bg-[#F0F0F1] px-2.5 py-1">
-            <Text className="text-[8px] font-bold text-[#333333]">
+    <View className="mt-3 rounded-lg border border-[#E2E5E9] bg-white px-3 py-3 shadow-sm">
+      <View className="flex-row items-center justify-between">
+        <View className="mr-2 flex-1 flex-row items-center">
+          <View className="rounded bg-[#EEEEEE] px-2 py-1">
+            <Text className="text-[9px] text-[#777777]">
               {registration.id}
             </Text>
           </View>
-
-          {/* Name */}
-
           <Text
-            className="ml-2 flex-1 text-[12px] font-bold text-[#171717]"
+            className="ml-2 flex-1 text-[13px] font-medium text-[#333333]"
             numberOfLines={1}
           >
             {registration.name}
           </Text>
+        </View>
 
-          {/* Status */}
-
-          <View
-            className={`flex-row items-center rounded-full px-2.5 py-1 ${
-              isApproved
+        <View
+          className={`rounded px-2 py-1 ${
+            isPending
+              ? "bg-[#FFF3E0]"
+              : isApproved
                 ? "bg-[#E8F7EF]"
                 : isRejected
-                ? "bg-[#FDECEC]"
-                : "bg-[#EEF4FF]"
-            }`}
-          >
-            <View
-              className={`mr-1.5 h-[6px] w-[6px] rounded-full ${
-                isApproved
-                  ? "bg-[#16804B]"
-                  : isRejected
-                  ? "bg-[#C62828]"
-                  : "bg-[#0B2855]"
-              }`}
-            />
-
-            <Text
-              className={`text-[8px] font-medium ${
-                isApproved
+                  ? "bg-[#FDECEC]"
+                  : "bg-[#F0F2F5]"
+          }`}
+        >
+          <Text
+            className={`text-[9px] font-semibold ${
+              isPending
+                ? "text-[#B76E00]"
+                : isApproved
                   ? "text-[#16804B]"
                   : isRejected
-                  ? "text-[#C62828]"
-                  : "text-[#0B2855]"
-              }`}
-            >
-              {registration.status === "Draft" ? "Open" : registration.status}
-            </Text>
-          </View>
+                    ? "text-[#C62828]"
+                    : "text-[#667085]"
+            }`}
+          >
+            {statusLabel}
+          </Text>
         </View>
+      </View>
+
+      <View className="mt-3 flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <Text className="mr-1 text-[13px] text-[#344563]">▣</Text>
+          <Text className="text-[10px] text-[#777777]">
+            {registration.date}
+          </Text>
+        </View>
+        <Pressable
+          onPress={onView}
+          className="rounded-md bg-[#0B2855] px-4 py-2 active:opacity-80"
+        >
+          <Text className="text-[10px] font-medium text-white">View</Text>
+        </Pressable>
       </View>
     </View>
   );

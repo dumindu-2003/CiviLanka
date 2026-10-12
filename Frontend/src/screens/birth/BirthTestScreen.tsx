@@ -4,11 +4,9 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  StatusBar,
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import AllBirthAplications from "./AllBirthApplications";
 import ApplicationForm from "./BirthApplicationForm";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
@@ -89,58 +87,12 @@ export default function BirthTestScreen() {
     console.log("View application:", id);
   };
 
-  const draftCount = registrations.filter((item) => item.status === "Draft").length;
+  const rejectedCount = registrations.filter((item) => item.status === "Rejected").length;
   const pendingCount = registrations.filter((item) => item.status === "Pending").length;
   const approvedCount = registrations.filter((item) => item.status === "Approved").length;
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-white"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0B2855"
-      />
-
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
-      <View className="h-[56px] flex-row items-center justify-between bg-[#0B2855] px-2">
-        {/* Menu */}
-        <Pressable
-          className="h-10 w-10 items-center justify-center"
-          onPress={() => console.log("Menu pressed")}
-        >
-          <Text className="text-[25px] text-white">
-            ☰
-          </Text>
-        </Pressable>
-
-        {/* Title */}
-        <Text className="text-[16px] font-bold text-white">
-          Dashboard
-        </Text>
-
-        {/* Profile */}
-        <Pressable
-          className="h-10 w-10 items-center justify-center"
-          onPress={() => console.log("Profile pressed")}
-        >
-          <View className="h-7 w-7 items-center justify-center rounded-full border-2 border-white">
-            <Text className="text-[13px] text-white">
-              ●
-            </Text>
-          </View>
-        </Pressable>
-      </View>
-
-      {/* =====================================================
-          MAIN CONTENT
-      ====================================================== */}
-
-      <ScrollView
+    <ScrollView
         className="flex-1 bg-[#F8F9FB]"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -149,7 +101,7 @@ export default function BirthTestScreen() {
       >
         {/* WELCOME */}
 
-        <View className="px-4 pb-3 pt-7">
+        <View className="px-4 pb-3 pt-10">
           <Text className="text-[20px] font-bold text-[#222222]">
             Welcome, Birth Registrar
           </Text>
@@ -165,27 +117,24 @@ export default function BirthTestScreen() {
 
         <View className="mx-3 flex-row rounded-xl border border-[#E1E5EA] bg-white p-1 shadow-sm">
           <StatCard
-            icon="▣"
-            label="NEW"
-            number={String(draftCount)}
-            description="New Entries"
-            iconColor="#243C70"
-          />
-
-          <StatCard
             icon="⌛"
-            label="WAIT"
             number={String(pendingCount)}
             description="Pending"
-            iconColor="#243C70"
+            iconColor="#B76E00"
           />
 
           <StatCard
             icon="✓"
-            label="DONE"
             number={String(approvedCount)}
             description="Approved"
-            iconColor="#243C70"
+            iconColor="#16804B"
+          />
+
+          <StatCard
+            icon="×"
+            number={String(rejectedCount)}
+            description="Rejected"
+            iconColor="#C62828"
           />
         </View>
 
@@ -262,8 +211,7 @@ export default function BirthTestScreen() {
             </Text>
           )}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
@@ -273,7 +221,6 @@ export default function BirthTestScreen() {
 
 type StatCardProps = {
   icon: string;
-  label: string;
   number: string;
   description: string;
   iconColor: string;
@@ -281,31 +228,19 @@ type StatCardProps = {
 
 function StatCard({
   icon,
-  label,
   number,
   description,
   iconColor,
 }: StatCardProps) {
   return (
-    <View className="flex-1 px-2 py-3">
-      <View className="flex-row items-start justify-between">
-        <Text
-          className="text-[18px]"
-          style={{ color: iconColor }}
-        >
-          {icon}
-        </Text>
-
-        <Text className="text-[8px] font-medium text-[#777777]">
-          {label}
-        </Text>
-      </View>
-
+    <View className="flex-1 items-center px-2 py-3">
+      <Text className="text-[18px]" style={{ color: iconColor }}>
+        {icon}
+      </Text>
       <Text className="mt-1 text-[21px] font-bold text-[#222222]">
         {number}
       </Text>
-
-      <Text className="text-[9px] text-[#888888]">
+      <Text className="text-center text-[11px] text-[#888888]">
         {description}
       </Text>
     </View>
@@ -331,19 +266,24 @@ function RegistrationCard({
   onPress,
 }: RegistrationCardProps) {
   const isPending = registration.status === "Pending";
+  const isApproved = registration.status === "Approved";
+  const isRejected = registration.status === "Rejected";
   const statusLabel = registration.status === "Draft" ? "Open" : registration.status;
 
   return (
     <View className="mt-3 rounded-lg border border-[#E2E5E9] bg-white px-3 py-3 shadow-sm">
       <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center">
+        <View className="mr-2 flex-1 flex-row items-center">
           <View className="rounded bg-[#EEEEEE] px-2 py-1">
             <Text className="text-[9px] text-[#777777]">
               {registration.id}
             </Text>
           </View>
 
-          <Text className="ml-2 text-[13px] font-medium text-[#333333]">
+          <Text
+            className="ml-2 flex-1 text-[13px] font-medium text-[#333333]"
+            numberOfLines={1}
+          >
             {registration.babyName}
           </Text>
         </View>
@@ -351,11 +291,25 @@ function RegistrationCard({
         <View
           className={`rounded px-2 py-1 ${
             isPending
-              ? "bg-[#FF9900]"
-              : "bg-[#329447]"
+              ? "bg-[#FFF3E0]"
+              : isApproved
+                ? "bg-[#E8F7EF]"
+                : isRejected
+                  ? "bg-[#FDECEC]"
+                  : "bg-[#F0F2F5]"
           }`}
         >
-          <Text className="text-[9px] font-semibold text-white">
+          <Text
+            className={`text-[9px] font-semibold ${
+              isPending
+                ? "text-[#B76E00]"
+                : isApproved
+                  ? "text-[#16804B]"
+                  : isRejected
+                    ? "text-[#C62828]"
+                    : "text-[#667085]"
+            }`}
+          >
             {statusLabel}
           </Text>
         </View>

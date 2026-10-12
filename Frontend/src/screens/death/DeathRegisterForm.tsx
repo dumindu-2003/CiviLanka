@@ -156,21 +156,18 @@ export default function DeathRegisterForm({
         </Pressable>
 
         <View className="ml-3 flex-1">
-          <Text className="text-[9px] font-medium tracking-[0.5px] text-white">
-            DEATH REGISTRATION - STEP {step}:{" "}
-            {step === 1
-              ? "INFORMANT & DEMISE"
-              : "DECEASED DETAILS"}
+          <Text className="text-[15px] font-bold text-white">
+            Death Registration
           </Text>
 
-          <Text className="mt-1 text-[7px] text-[#D7DFEC]">
-            Official Death Registration Application
+          <Text className="text-[8px] text-[#D5DEEC]">
+            Step {step} of 2 • Application
           </Text>
         </View>
 
-        <View className="h-[25px] w-[25px] items-center justify-center rounded-full bg-black">
-          <Text className="text-[11px] text-white">
-            ♙
+        <View className="h-[27px] w-[27px] items-center justify-center rounded-full border border-white">
+          <Text className="text-[10px] text-white">
+            ●
           </Text>
         </View>
       </View>
@@ -178,69 +175,25 @@ export default function DeathRegisterForm({
       {/* =====================================================
           PROGRESS
       ====================================================== */}
-      <View className="border-b border-[#DDE2E8] bg-white px-3 py-3">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center">
-            <View className="h-[25px] w-[25px] items-center justify-center rounded-full bg-[#0B2855]">
-              <Text className="text-[10px] font-bold text-white">
-                {step}
-              </Text>
-            </View>
-
-            <View className="ml-2">
-              <Text className="text-[8px] text-[#555555]">
-                Application Step {step} of 2
-              </Text>
-
-              <Text className="text-[14px] font-bold text-[#171717]">
-                {step === 1
-                  ? "Informant & Death Details"
-                  : "Deceased Legal Particulars"}
-              </Text>
-            </View>
-          </View>
-
-          <View className="rounded-full bg-[#EEEEF0] px-3 py-1">
-            <Text className="text-[8px] font-bold text-[#777777]">
-              {step === 1 ? "50%" : "100%"}
-            </Text>
-
-            <Text className="text-[7px] text-[#777777]">
-              COMPLETE
-            </Text>
-          </View>
-        </View>
-
-        {/* Progress line */}
-        <View className="mt-3 h-[4px] overflow-hidden rounded-full bg-[#DDE2E8]">
+      <View className="bg-[#0B2855] px-3 pb-3">
+        <View className="h-[5px] overflow-hidden rounded-full bg-[#566B8A]">
           <View
-            className={`h-full rounded-full bg-[#0B2855] ${
-              step === 1 ? "w-1/2" : "w-full"
-            }`}
+            className="h-full rounded-full bg-white"
+            style={{ width: `${(step / 2) * 100}%` }}
           />
         </View>
 
-        {/* Step indicators */}
         <View className="mt-2 flex-row justify-between">
-          <Text
-            className={`text-[7px] ${
-              step === 1
-                ? "font-bold text-[#0B2855]"
-                : "text-[#777777]"
-            }`}
-          >
-            ① Informant
-          </Text>
-
-          <Text
-            className={`text-[7px] ${
-              step === 2
-                ? "font-bold text-[#0B2855]"
-                : "text-[#777777]"
-            }`}
-          >
-            ② Deceased
-          </Text>
+          <ProgressItem
+            title="Informant & Demise"
+            active={step === 1}
+            completed={step > 1}
+          />
+          <ProgressItem
+            title="Deceased Details"
+            active={step === 2}
+            completed={false}
+          />
         </View>
       </View>
 
@@ -248,11 +201,13 @@ export default function DeathRegisterForm({
           PAGE CONTENT
       ====================================================== */}
       <ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
-          paddingHorizontal: 10,
-          paddingTop: 10,
-          paddingBottom: 30,
+          paddingHorizontal: 12,
+          paddingTop: 12,
+          paddingBottom: 20,
         }}
       >
         {step === 1 ? (
@@ -267,49 +222,82 @@ export default function DeathRegisterForm({
           />
         )}
 
-        {/* =================================================
-            BUTTONS
-        ================================================== */}
+      </ScrollView>
 
-        <View className="mt-4">
-          {/* Next / Submit */}
-          <Pressable
-            onPress={handleNext}
-            disabled={saving}
-            className="h-[42px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
-          >
-            <Text className="text-[11px] font-bold text-white">
-              {step === 1
-                ? "Next: Deceased Details →"
-                : initialData ? "Save Death Application Changes" : "Submit Death Registration"}
-            </Text>
-          </Pressable>
-
-          {/* Save Draft */}
-          <Pressable
-            onPress={handleSaveDraft}
-            disabled={saving}
-            className="mt-2 h-[42px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
-          >
-            <Text className="text-[11px] font-bold text-white">
-              {initialData ? "Save Changes" : "▣ Save as Draft"}
-            </Text>
-          </Pressable>
-
-          {/* Back on Step 2 */}
-          {step === 2 && (
+      {/* =================================================
+          FOOTER
+      ================================================== */}
+      <View className="border-t border-[#DDE2E8] bg-white px-3 py-2">
+        {step === 1 ? (
+          <>
             <Pressable
-              onPress={handleBack}
+              onPress={handleNext}
               disabled={saving}
-              className="mt-2 h-[42px] items-center justify-center rounded-lg border border-[#0B2855] bg-white"
+              className="h-[42px] items-center justify-center rounded-md bg-[#0B2855] active:opacity-80"
             >
-              <Text className="text-[11px] font-bold text-[#0B2855]">
-                ← Back to Informant Details
+              <Text className="text-[11px] font-semibold text-white">
+                Next: Deceased Details  →
               </Text>
             </Pressable>
-          )}
-        </View>
-      </ScrollView>
+
+            <View className="mt-1 flex-row">
+              <Pressable
+                onPress={handleBack}
+                disabled={saving}
+                className="mr-1 h-[38px] flex-1 items-center justify-center rounded-md border border-[#0B2855] bg-white"
+              >
+                <Text className="text-[10px] font-medium text-[#0B2855]">
+                  ← Back
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSaveDraft}
+                disabled={saving}
+                className="ml-1 h-[38px] flex-1 items-center justify-center rounded-md bg-[#0B2855]"
+              >
+                <Text className="text-[10px] font-medium text-white">
+                  {initialData ? "Save Changes" : "▣ Save as Draft"}
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <>
+            <Pressable
+              onPress={handleNext}
+              disabled={saving}
+              className="h-[42px] items-center justify-center rounded-md bg-[#0B2855]"
+            >
+              <Text className="text-[11px] font-semibold text-white">
+                {initialData ? "Save Death Application Changes" : "Submit Death Registration"}
+              </Text>
+            </Pressable>
+
+            <View className="mt-1 flex-row">
+              <Pressable
+                onPress={handleBack}
+                disabled={saving}
+                className="mr-1 h-[38px] flex-1 items-center justify-center rounded-md border border-[#0B2855] bg-white"
+              >
+                <Text className="text-[10px] font-medium text-[#0B2855]">
+                  ← Back to Informant Details
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSaveDraft}
+                disabled={saving}
+                className="ml-1 h-[38px] flex-1 items-center justify-center rounded-md bg-[#0B2855]"
+              >
+                <Text className="text-[10px] font-medium text-white">
+                  {initialData ? "Save Changes" : "▣ Save as Draft"}
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
       <AuthorizeSignOffModal
         visible={showSignOff && !initialData}
         title="Authorize death registration"
@@ -329,101 +317,77 @@ function StepOne({
   updateField,
 }: {
   form: FormData;
-  updateField: (
-    field: keyof FormData,
-    value: string
-  ) => void;
+  updateField: (field: keyof FormData, value: string) => void;
 }) {
   return (
     <View>
-      {/* Informant */}
-      <SectionCard
+      <StepHeading
+        step="1"
+        title="Informant & Demise Details"
+        percentage="50% Completed"
+      />
+
+      <FormCard
         title="Informant's Details"
-        badge="PARTY LODGING"
+        badge="INFORMANT"
       >
-        <FieldLabel text="Informant's Full Legal Name" />
-
         <InputField
+          label="Informant's Full Legal Name"
           value={form.informantName}
-          onChangeText={(value) =>
-            updateField("informantName", value)
-          }
+          onChangeText={(value) => updateField("informantName", value)}
         />
 
-        <FieldLabel text="National Identity Card (NIC) / Passport No." />
-
         <InputField
+          label="National Identity Card (NIC) / Passport No."
           value={form.nic}
-          onChangeText={(value) =>
-            updateField("nic", value)
-          }
+          onChangeText={(value) => updateField("nic", value)}
         />
 
-        <FieldLabel text="Relationship to Deceased" />
-
         <InputField
+          label="Relationship to Deceased"
           value={form.relationship}
           onChangeText={(value) => updateField("relationship", value)}
         />
 
-        <FieldLabel text="Informant's Contact Number" />
-
         <InputField
+          label="Informant's Contact Number"
           value={form.informantContact}
-          onChangeText={(value) =>
-            updateField(
-              "informantContact",
-              value
-            )
-          }
+          onChangeText={(value) => updateField("informantContact", value)}
           keyboardType="phone-pad"
         />
+      </FormCard>
 
-      </SectionCard>
-
-      {/* Demise Context */}
-      <SectionCard
+      <FormCard
         title="Demise Context"
         badge="INCIDENT DETAILS"
       >
-        <FieldLabel text="Immediate Place of Demise" />
-
         <InputField
+          label="Immediate Place of Demise"
           value={form.placeOfDemise}
           onChangeText={(value) => updateField("placeOfDemise", value)}
         />
 
-        <FieldLabel text="Date of Demise" />
-
-        <DatePickerField
+        <DateInputField
+          label="Date of Demise"
           value={form.dateOfDemise}
           onChangeText={(value) => updateField("dateOfDemise", value)}
-          accessibilityLabel="Date of Demise"
         />
-
-        <FieldLabel text="Time of Demise" />
 
         <InputField
+          label="Time of Demise"
           value={form.timeOfDemise}
           placeholder="HH:mm"
-          onChangeText={(value) =>
-            updateField(
-              "timeOfDemise",
-              value
-            )
-          }
-          rightText="●"
+          onChangeText={(value) => updateField("timeOfDemise", value)}
         />
 
-        {/* Medical note */}
-        <View className="mt-2 rounded-md border border-[#D8E1EA] bg-[#F1F6FA] px-2.5 py-2">
-          <Text className="text-[8px] leading-[12px] text-[#596A7B]">
-            ⓘ Medical Certificate of Cause of Death
-            (Form B-4) issued by the attending physician
-            or hospital registrar will be required in Step 3.
+        <View className="mt-1 rounded-md bg-[#F1F3F6] p-2">
+          <Text className="text-[8px] leading-4 text-[#687385]">
+            Medical Certificate of Cause of Death (Form B-4) issued by the
+            attending physician or hospital registrar is required for final
+            registration.
           </Text>
         </View>
-      </SectionCard>
+      </FormCard>
     </View>
   );
 }
@@ -437,201 +401,195 @@ function StepTwo({
   updateField,
 }: {
   form: FormData;
-  updateField: (
-    field: keyof FormData,
-    value: string
-  ) => void;
+  updateField: (field: keyof FormData, value: string) => void;
 }) {
   return (
     <View>
-      {/* Deceased Legal Particulars */}
-      <SectionCard
+      <StepHeading
+        step="2"
+        title="Deceased Details"
+        percentage="100% Completed"
+      />
+
+      <View className="mb-3 flex-row rounded-md border border-[#DDE2E8] bg-white p-2">
+        <SmallTab text="Informant & Demise" active={false} />
+        <SmallTab text="Deceased Details" active />
+      </View>
+
+      <FormCard
         title="Deceased Person's Particulars"
         badge="OFFICIAL RECORD"
       >
-        {/* NIC */}
-        <FieldLabel text="NIC / Identity Number" />
-
-        <View className="flex-row items-center">
-          <View className="flex-1">
-            <InputField
-              value={form.deceasedNic}
-              onChangeText={(value) =>
-                updateField(
-                  "deceasedNic",
-                  value
-                )
-              }
-            />
-          </View>
-
-        </View>
-
-        {/* Name */}
-        <FieldLabel text="Full Legal Name" />
-
         <InputField
-          value={form.deceasedName}
-          onChangeText={(value) =>
-            updateField(
-              "deceasedName",
-              value
-            )
-          }
+          label="NIC / Identity Number"
+          value={form.deceasedNic}
+          onChangeText={(value) => updateField("deceasedNic", value)}
         />
 
-        {/* Gender */}
-        <FieldLabel text="Gender Assigned" />
+        <InputField
+          label="Full Legal Name"
+          value={form.deceasedName}
+          onChangeText={(value) => updateField("deceasedName", value)}
+        />
 
+        <FieldLabel label="Gender Assigned" />
         <View className="flex-row">
-          <Pressable
-            onPress={() =>
-              updateField("gender", "Male")
-            }
-            className={`mr-1 flex-1 rounded-md px-3 py-2 ${
-              form.gender === "Male"
-                ? "bg-[#0B2855]"
-                : "border border-[#D8DDE4] bg-white"
-            }`}
-          >
-            <Text
-              className={`text-center text-[9px] font-medium ${
-                form.gender === "Male"
-                  ? "text-white"
-                  : "text-[#333333]"
-              }`}
-            >
-              ♂ Male
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() =>
-              updateField("gender", "Female")
-            }
-            className={`ml-1 flex-1 rounded-md px-3 py-2 ${
-              form.gender === "Female"
-                ? "bg-[#0B2855]"
-                : "border border-[#D8DDE4] bg-white"
-            }`}
-          >
-            <Text
-              className={`text-center text-[9px] font-medium ${
-                form.gender === "Female"
-                  ? "text-white"
-                  : "text-[#333333]"
-              }`}
-            >
-              ♀ Female
-            </Text>
-          </Pressable>
+          <GenderButton
+            label="♂ Male"
+            active={form.gender === "Male"}
+            onPress={() => updateField("gender", "Male")}
+          />
+          <GenderButton
+            label="♀ Female"
+            active={form.gender === "Female"}
+            onPress={() => updateField("gender", "Female")}
+          />
         </View>
 
-        {/* DOB */}
-        <FieldLabel text="Date of Birth" />
-
-        <DatePickerField
+        <DateInputField
+          label="Date of Birth"
           value={form.dateOfBirth}
           onChangeText={(value) => updateField("dateOfBirth", value)}
-          accessibilityLabel="Date of Birth"
         />
 
-        {/* Age */}
-        <FieldLabel text="Age at Demise" />
-
         <InputField
+          label="Age at Demise"
           value={form.ageAtDeath}
-          onChangeText={(value) =>
-            updateField("ageAtDeath", value)
-          }
+          onChangeText={(value) => updateField("ageAtDeath", value)}
           keyboardType="numeric"
         />
 
-        {/* Marital Status */}
-        <FieldLabel text="Marital Status" />
-
         <InputField
+          label="Marital Status"
           value={form.maritalStatus}
           onChangeText={(value) => updateField("maritalStatus", value)}
         />
 
-        {/* Address */}
-        <FieldLabel text="Permanent Residential Address" />
-
         <InputField
+          label="Permanent Residential Address"
           value={form.deceasedAddress}
-          onChangeText={(value) =>
-            updateField(
-              "deceasedAddress",
-              value
-            )
-          }
+          onChangeText={(value) => updateField("deceasedAddress", value)}
           multiline
-          height={60}
         />
-      </SectionCard>
+      </FormCard>
 
-      {/* Cause & Circumstances */}
-      <SectionCard
+      <FormCard
         title="Cause & Circumstances"
         badge="FORM B-4"
       >
-        <FieldLabel text="Cause of Demise (Medical Assessment)" />
-
         <InputField
+          label="Cause of Demise (Medical Assessment)"
           value={form.causeOfDeath}
-          onChangeText={(value) =>
-            updateField(
-              "causeOfDeath",
-              value
-            )
-          }
+          onChangeText={(value) => updateField("causeOfDeath", value)}
           placeholder="Enter cause of death"
           multiline
-          height={80}
         />
 
-        <View className="mt-2 rounded-md border border-[#D8E1EA] bg-[#F1F6FA] px-2.5 py-2">
-          <Text className="text-[8px] leading-[12px] text-[#596A7B]">
-            ⓘ The Medical Certificate of Cause of
-            Death (Form B-4) must be verified before
-            final registration.
+        <View className="mt-1 rounded-md bg-[#F1F3F6] p-2">
+          <Text className="text-[8px] leading-4 text-[#687385]">
+            The Medical Certificate of Cause of Death (Form B-4) must be
+            verified before final registration.
           </Text>
         </View>
-      </SectionCard>
+      </FormCard>
     </View>
   );
 }
 
 /* =========================================================
-   SECTION CARD
+   STEP HEADING
 ========================================================= */
 
-function SectionCard({
+function StepHeading({
+  step,
+  title,
+  percentage,
+}: {
+  step: string;
+  title: string;
+  percentage: string;
+}) {
+  return (
+    <View className="mb-3">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-[8px] text-[#7A8491]">Step {step} of 2</Text>
+        <View className="rounded-full bg-[#E9EDF2] px-2 py-1">
+          <Text className="text-[7px] font-semibold text-[#526174]">
+            {percentage}
+          </Text>
+        </View>
+      </View>
+      <Text className="mt-1 text-[18px] font-bold text-[#25334A]">{title}</Text>
+    </View>
+  );
+}
+
+function ProgressItem({
+  title,
+  active,
+  completed,
+}: {
+  title: string;
+  active: boolean;
+  completed: boolean;
+}) {
+  return (
+    <View className="flex-row items-center">
+      {completed ? <Text className="mr-1 text-[8px] text-white">✓</Text> : null}
+      <Text
+        className={`text-[7px] ${
+          active || completed
+            ? "font-semibold text-white"
+            : "text-[#AEBACB]"
+        }`}
+      >
+        {title}
+      </Text>
+    </View>
+  );
+}
+
+function SmallTab({ text, active }: { text: string; active: boolean }) {
+  return (
+    <View className="flex-1 items-center">
+      <Text
+        className={`text-[7px] ${
+          active
+            ? "font-semibold text-[#0B2855]"
+            : "text-[#7C8795]"
+        }`}
+      >
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+/* =========================================================
+   FORM CARD
+========================================================= */
+
+function FormCard({
   title,
   badge,
   children,
 }: {
   title: string;
-  badge: string;
+  badge?: string;
   children: React.ReactNode;
 }) {
   return (
     <View className="mb-3 rounded-lg border border-[#E0E4E9] bg-white p-3">
-      <View className="mb-3 flex-row items-center justify-between">
-        <Text className="flex-1 text-[13px] font-bold text-[#171717]">
+      <View className="mb-3 flex-row items-start justify-between">
+        <Text className="flex-1 text-[12px] font-bold text-[#26344A]">
           {title}
         </Text>
-
-        {badge !== "" && (
-          <View className="rounded-md bg-[#F1F1F1] px-2 py-1">
-            <Text className="text-[6px] font-medium text-[#777777]">
-              {badge}
-            </Text>
+        {badge ? (
+          <View className="rounded-full bg-[#F0F2F5] px-2 py-1">
+            <Text className="text-[7px] font-medium text-[#667085]">{badge}</Text>
           </View>
-        )}
+        ) : null}
       </View>
-
       {children}
     </View>
   );
@@ -642,14 +600,17 @@ function SectionCard({
 ========================================================= */
 
 function FieldLabel({
-  text,
+  label,
+  required = false,
 }: {
-  text: string;
+  label: string;
+  required?: boolean;
 }) {
   return (
-    <Text className="mb-1 mt-2 text-[8px] text-[#626A73]">
-      {text}
-    </Text>
+    <View className="mb-1 flex-row items-center">
+      <Text className="text-[8px] font-medium text-[#687385]">{label}</Text>
+      {required ? <Text className="ml-1 text-[8px] text-[#D1495B]">*</Text> : null}
+    </View>
   );
 }
 
@@ -658,50 +619,89 @@ function FieldLabel({
 ========================================================= */
 
 function InputField({
+  label,
   value,
   onChangeText,
   placeholder,
   multiline = false,
-  height = 36,
-  rightText,
   keyboardType,
 }: {
+  label: string;
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
   multiline?: boolean;
-  height?: number;
-  rightText?: string;
   keyboardType?: "default" | "phone-pad" | "numeric";
 }) {
   return (
-    <View
-      className="flex-row items-center rounded-md border border-[#DDE2E8] bg-[#F5F6F7] px-2"
-      style={{
-        minHeight: height,
-      }}
-    >
-      <TextInput
+    <View className="mb-3">
+      <FieldLabel label={label} />
+      <View
+        className={`flex-row rounded-md border border-[#D9DEE5] bg-[#F8F9FB] ${
+          multiline ? "min-h-[58px]" : "h-[38px]"
+        }`}
+      >
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#9BA3AE"
+          multiline={multiline}
+          keyboardType={keyboardType ?? "default"}
+          textAlignVertical={multiline ? "top" : "center"}
+          className={`flex-1 px-3 text-[9px] text-[#30343B] ${
+            multiline ? "py-2" : "py-0"
+          }`}
+        />
+      </View>
+    </View>
+  );
+}
+
+function DateInputField({
+  label,
+  value,
+  onChangeText,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+}) {
+  return (
+    <View className="mb-3">
+      <FieldLabel label={label} />
+      <DatePickerField
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#999999"
-        multiline={multiline}
-        keyboardType={keyboardType || "default"}
-        className="flex-1 text-[9px] text-[#333333]"
-        style={{
-          minHeight: multiline ? height - 8 : 34,
-          textAlignVertical: multiline
-            ? "top"
-            : "center",
-        }}
+        accessibilityLabel={label}
       />
-
-      {rightText && (
-        <Text className="ml-1 text-[10px] text-[#0B2855]">
-          {rightText}
-        </Text>
-      )}
     </View>
+  );
+}
+
+function GenderButton({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`mr-1 h-[34px] flex-1 items-center justify-center rounded-md ${
+        active ? "bg-[#0B2855]" : "border border-[#D8DEE6] bg-white"
+      }`}
+    >
+      <Text
+        className={`text-[9px] font-medium ${
+          active ? "text-white" : "text-[#344563]"
+        }`}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }

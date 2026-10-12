@@ -7,3 +7,11 @@
 10/09/2026 21:43:22 ~ Update ~ Record not found, or it can no longer be edited.;
 10/09/2026 21:46:04 ~ Reject ~ A rejection reason is required.;
 10/09/2026 21:46:36 ~ Approve ~ The UPDATE statement conflicted with the FOREIGN KEY constraint "FK__death_cer__appro__40F9A68C". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.district_registrar", column 'district_registrar_id'.;
+10/12/2026 19:27:22 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:31 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:33 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:37 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:45 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 22:02:09 ~ Reject ~ A rejection reason is required.;
+10/12/2026 22:17:34 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 22:17:37 ~ Update ~ Record not found, or it can no longer be edited.;

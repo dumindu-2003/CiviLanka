@@ -116,12 +116,12 @@ export function DatePickerField({
               onPress={() => setVisible(false)}
               className="flex-1"
             />
-            <View className="rounded-t-2xl bg-white px-4 pb-8 pt-4">
+            <View className="rounded-t-2xl bg-black px-4 pb-8 pt-4">
               <View className="mb-2 flex-row items-center justify-between">
                 <Pressable onPress={() => setVisible(false)} className="py-2">
-                  <Text className="text-[15px] text-[#0B2855]">Cancel</Text>
+                  <Text className="text-[15px] text-white">Cancel</Text>
                 </Pressable>
-                <Text className="text-[15px] font-semibold text-[#171717]">
+                <Text className="text-[15px] font-semibold text-white">
                   Select date
                 </Text>
                 <Pressable
@@ -131,7 +131,7 @@ export function DatePickerField({
                   }}
                   className="py-2"
                 >
-                  <Text className="text-[15px] font-semibold text-[#0B2855]">
+                  <Text className="text-[15px] font-semibold text-white">
                     Done
                   </Text>
                 </Pressable>
@@ -140,6 +140,8 @@ export function DatePickerField({
                 value={pickerDate}
                 mode="date"
                 display="inline"
+                themeVariant="dark"
+                accentColor="#0B2855"
                 onChange={(_event, selectedDate) => {
                   if (selectedDate) setPickerDate(selectedDate);
                 }}
