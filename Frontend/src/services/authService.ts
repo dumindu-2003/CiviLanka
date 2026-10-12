@@ -17,6 +17,7 @@ const VILLAGE_FORM_SCREENS = [
   'CertificateDetail',
   'MyNicForms',
   'MyNicFormDetail',
+  'DeathReports',
 ];
 
 const VILLAGE_DEMO: LoginResult = {

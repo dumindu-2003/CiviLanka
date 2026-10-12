@@ -28,6 +28,12 @@ export const updateDeathApplication = createAsyncThunk(
     deathService.update(arg.id, arg.payload),
 );
 
+export const decideDeathApplication = createAsyncThunk(
+  'death/decideApplication',
+  (arg: { id: string; status: 'Approved' | 'Rejected'; reason?: string }) =>
+    deathService.decide(arg.id, arg.status, arg.reason),
+);
+
 export const submitDeathApplication = createAsyncThunk(
   'death/submitApplication',
   (arg: { id: string; credentials: SignOffCredentials }) =>

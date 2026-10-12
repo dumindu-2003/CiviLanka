@@ -94,6 +94,7 @@ class ApplicationAction:     # sp_birth, sp_death, sp_marriage, sp_nic (NIC has 
     UPDATE = 5
     SUBMIT = 6
     DELETE = 7
+    DECIDE = 8           # sp_death only: Death Registrar approves or rejects a pending report
 
 
 class VillageAction:         # sp_village

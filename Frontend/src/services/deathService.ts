@@ -9,6 +9,7 @@ import type { DeathApplication, DeathApplicationPayload } from '../types/death';
 // ── LIST ROW (DTH-000012) ────────────────────────────────────────────────────────
 export interface DeathListItem extends AppListItem {
   date_of_death: string;
+  submitted_by?: number;
 }
 
 // ── FORM DATA (goes inside "data" of Create / Update) ──────────────────────
@@ -36,6 +37,7 @@ export interface DeathRecord extends DeathData {
   app_ref: string;
   status: AppStatus;
   rejection_reason: string | null;
+  submitted_by?: number;
   created_at: string;
 }
 
@@ -84,6 +86,14 @@ export const submitDeath = (appId: number, credentials: SignOffCredentials) =>
 export const deleteDeathDraft = (appId: number) =>
   apiClient.post<{ app_id: number }>('/api/death/Delete', { app_id: appId });
 
+// Death Registrar only. Pending -> Approved, or Pending -> Rejected with a reason.
+export const decideDeath = (appId: number, status: 'Approved' | 'Rejected', reason?: string) =>
+  apiClient.post<AppSaveResult>('/api/death/Decide', {
+    app_id: appId,
+    status,
+    data: reason ? { reason } : {},
+  });
+
 const emptyPayload = (): DeathApplicationPayload => ({
   informantName: '',
   nic: '',
@@ -103,7 +113,11 @@ const emptyPayload = (): DeathApplicationPayload => ({
 });
 
 const dateForInput = (value?: string | null) => value?.slice(0, 10) ?? '';
-const timeForInput = (value?: string | null) => value?.split('T').pop() ?? '';
+const timeForInput = (value?: string | null) => {
+  const raw = value?.split('T').pop() ?? '';
+  const match = /^(\d{2}:\d{2})/.exec(raw);
+  return match?.[1] ?? '';
+};
 const optionalText = (value: string) => value.trim() || undefined;
 
 function toDate(value: string, label: string, required: true): string;
@@ -141,7 +155,7 @@ const toDeathData = (payload: DeathApplicationPayload): DeathData => {
 
   return {
     deceased_name: deceasedName,
-    deceased_nic: optionalText(payload.deceasedNic),
+    deceased_nic: optionalText(payload.deceasedNic)?.toUpperCase(),
     date_of_birth: toDate(payload.dateOfBirth, 'Date of birth'),
     date_of_death: toDate(payload.dateOfDemise, 'Date of death', true),
     time_of_death: toTime(payload.timeOfDemise),
@@ -152,9 +166,9 @@ const toDeathData = (payload: DeathApplicationPayload): DeathData => {
     marital_status: optionalText(payload.maritalStatus),
     permanent_address: optionalText(payload.deceasedAddress),
     informant_name: optionalText(payload.informantName),
-    informant_nic: optionalText(payload.nic),
+    informant_nic: optionalText(payload.nic)?.toUpperCase(),
     informant_relationship: optionalText(payload.relationship),
-    informant_contact: optionalText(payload.informantContact),
+    informant_contact: optionalText(payload.informantContact)?.replace(/[\s-]/g, ''),
   };
 };
 
@@ -181,7 +195,7 @@ const mapDeathRecord = (record: DeathRecord): DeathApplication => ({
   status: record.status,
   rejectionReason: record.rejection_reason ?? '',
   submittedOn: record.created_at ?? '',
-  submittedBy: '',
+  submittedBy: record.submitted_by == null ? '' : String(record.submitted_by),
   signedOffBy: '',
   approvedBy: '',
   approvedAt: '',
@@ -201,7 +215,7 @@ const mapDeathListItem = (item: DeathListItem): DeathApplication => ({
   status: item.status,
   rejectionReason: item.rejection_reason ?? '',
   submittedOn: item.created_at,
-  submittedBy: '',
+  submittedBy: item.submitted_by == null ? '' : String(item.submitted_by),
   signedOffBy: '',
   approvedBy: '',
   approvedAt: '',
@@ -245,5 +259,9 @@ export const deathService = {
 
   async submit(id: string, credentials: SignOffCredentials): Promise<AppSaveResult> {
     return submitDeath(toAppId(id), credentials);
+  },
+
+  async decide(id: string, status: 'Approved' | 'Rejected', reason?: string): Promise<AppSaveResult> {
+    return decideDeath(toAppId(id), status, reason);
   },
 };
