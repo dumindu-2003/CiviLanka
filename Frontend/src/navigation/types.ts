@@ -17,6 +17,7 @@ export type RootStackParamList = {
   NicReceipt: undefined;
   MyNicForms: undefined;
   MyNicFormDetail: { appId: number };
+  DeathReports: undefined;
 
   BirthDashboard: undefined;
   DeathDashboard: undefined;

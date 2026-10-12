@@ -8,6 +8,7 @@ import CertificatePreviewScreen from '../screens/village/CertificatePreviewScree
 import CertificateDetailScreen from '../screens/village/CertificateDetailScreen';
 import MyNicFormsScreen from '../screens/village/MyNicFormsScreen';
 import MyNicFormDetailScreen from '../screens/village/MyNicFormDetailScreen';
+import DeathReportScreen from '../screens/village/DeathReportScreen';
 import ReportsScreen from '../screens/district/ReportsScreen';
 import AllRecordsScreen from '../screens/district/AllRecordsScreen';
 import NicPendingListScreen from '../screens/district/NicPendingListScreen';
@@ -144,6 +145,12 @@ export const stackScreens: Record<
   MyNicFormDetail: {
     component: MyNicFormDetailScreen,
     title: 'NIC Form',
+    headerShown: false,
+  },
+
+  DeathReports: {
+    component: DeathReportScreen,
+    title: 'Death Reports',
     headerShown: false,
   },
 };

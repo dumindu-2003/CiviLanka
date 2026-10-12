@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -9,9 +9,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 
 import DeathRegisterForm from "./DeathRegisterForm";
 import AllDeathApplications from "./AllDeathApplications";
+import VillageDeathReportScreen from "./VillageDeathReportScreen";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { createDeathApplication, loadDeathApplications } from "../../actions/deathAction";
 import type { SignOffCredentials } from "../../types/auth";
@@ -21,6 +23,7 @@ export default function DeathTestScreen() {
   const dispatch = useAppDispatch();
   const registrations = useAppSelector((state) => state.death.queue);
   const status = useAppSelector((state) => state.death.status);
+  const userId = useAppSelector((state) => state.auth.user?.id);
   /* =====================================================
      SCREEN STATES
   ====================================================== */
@@ -31,14 +34,20 @@ export default function DeathTestScreen() {
   const [showAllApplications, setShowAllApplications] =
     useState(false);
 
-  useEffect(() => {
-    void dispatch(loadDeathApplications());
-  }, [dispatch]);
+  const [showReports, setShowReports] = useState(false);
+  const [prefill, setPrefill] = useState<DeathApplicationPayload | undefined>();
+
+  useFocusEffect(
+    useCallback(() => {
+      void dispatch(loadDeathApplications());
+    }, [dispatch]),
+  );
 
   const saveDraft = async (payload: DeathApplicationPayload) => {
     await dispatch(createDeathApplication({ payload, status: "Draft" })).unwrap();
     await dispatch(loadDeathApplications()).unwrap();
     setShowApplication(false);
+    setPrefill(undefined);
     Alert.alert("Draft saved", "The death application has been saved.");
   };
 
@@ -51,6 +60,7 @@ export default function DeathTestScreen() {
     ).unwrap();
     await dispatch(loadDeathApplications()).unwrap();
     setShowApplication(false);
+    setPrefill(undefined);
     Alert.alert("Application submitted", "The death application was submitted for review.");
   };
 
@@ -61,9 +71,29 @@ export default function DeathTestScreen() {
   if (showApplication) {
     return (
       <DeathRegisterForm
-        onBack={() => setShowApplication(false)}
+        initialData={prefill}
+        onBack={() => {
+          setShowApplication(false);
+          setPrefill(undefined);
+        }}
         onSaveDraft={saveDraft}
         onSubmit={submitApplication}
+      />
+    );
+  }
+
+  if (showReports) {
+    return (
+      <VillageDeathReportScreen
+        onBack={() => {
+          setShowReports(false);
+          void dispatch(loadDeathApplications());
+        }}
+        onCreateRegistration={(payload) => {
+          setPrefill(payload);
+          setShowReports(false);
+          setShowApplication(true);
+        }}
       />
     );
   }
@@ -85,6 +115,7 @@ export default function DeathTestScreen() {
   ====================================================== */
 
   const handleNewRegistration = () => {
+    setPrefill(undefined);
     setShowApplication(true);
   };
 
@@ -100,6 +131,10 @@ export default function DeathTestScreen() {
     // using its View Application button.
     setShowAllApplications(true);
   };
+
+  const incomingReports = registrations.filter(
+    (item) => item.submittedBy !== "" && item.submittedBy !== userId,
+  );
 
   const draftCount = registrations.filter((item) => item.status === "Draft").length;
   const pendingCount = registrations.filter((item) => item.status === "Pending").length;
@@ -267,6 +302,17 @@ export default function DeathTestScreen() {
         {/* =================================================
             NEW DEATH REGISTRATION
         ================================================== */}
+
+        {incomingReports.length > 0 ? (
+          <Pressable
+            onPress={() => setShowReports(true)}
+            className="mb-2.5 h-[42px] flex-row items-center justify-center rounded-lg bg-[#8A6A00] active:opacity-80"
+          >
+            <Text className="text-[12px] font-bold text-white">
+              View death report
+            </Text>
+          </Pressable>
+        ) : null}
 
         <Pressable
           onPress={handleNewRegistration}

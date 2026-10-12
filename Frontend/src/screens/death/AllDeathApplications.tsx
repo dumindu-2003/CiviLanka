@@ -13,11 +13,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import UpdateDeathApplication from "./UpdateDeathApplication";
 import DeathRegisterForm from "./DeathRegisterForm";
 import {
+  decideDeathApplication,
   getDeathApplication,
   loadDeathApplications,
   updateDeathApplication,
 } from "../../actions/deathAction";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { errorMessage } from "../../utils/errorMessage";
 import type {
   DeathApplication,
   DeathApplicationPayload,
@@ -70,6 +72,7 @@ export default function AllDeathApplications({
   const dispatch = useAppDispatch();
   const applications = useAppSelector((state) => state.death.queue);
   const status = useAppSelector((state) => state.death.status);
+  const user = useAppSelector((state) => state.auth.user);
 
   const [selectedApplication, setSelectedApplication] =
     useState<DeathApplication | null>(null);
@@ -129,11 +132,54 @@ export default function AllDeathApplications({
       );
     }
 
+    const canEdit =
+      selectedApplication.submittedBy === user?.id &&
+      selectedApplication.status !== "Approved";
+    const canDecide =
+      user?.role === "DEATH_REGISTRAR" && selectedApplication.status === "Pending";
+    const refreshAfterDecision = async (message: string) => {
+      await dispatch(loadDeathApplications()).unwrap();
+      setSelectedApplication(null);
+      Alert.alert("Death report updated", message);
+    };
+
     return (
       <UpdateDeathApplication
         application={selectedApplication}
+        canEdit={canEdit}
         onBack={() => setSelectedApplication(null)}
         onEdit={() => setEditingApplication(true)}
+        onApprove={
+          canDecide
+            ? async () => {
+                try {
+                  await dispatch(decideDeathApplication({
+                    id: selectedApplication.id,
+                    status: "Approved",
+                  })).unwrap();
+                  await refreshAfterDecision("The death report is approved. It can no longer be edited.");
+                } catch (error) {
+                  Alert.alert("Unable to approve", errorMessage(error));
+                }
+              }
+            : undefined
+        }
+        onReject={
+          canDecide
+            ? async (reason) => {
+                try {
+                  await dispatch(decideDeathApplication({
+                    id: selectedApplication.id,
+                    status: "Rejected",
+                    reason,
+                  })).unwrap();
+                  await refreshAfterDecision("The death report was rejected. The village officer can correct and send it again.");
+                } catch (error) {
+                  Alert.alert("Unable to reject", errorMessage(error));
+                }
+              }
+            : undefined
+        }
       />
     );
   }
@@ -283,6 +329,7 @@ export default function AllDeathApplications({
           <DeathApplicationCard
             key={application.id}
             application={application}
+            incoming={application.submittedBy !== '' && application.submittedBy !== user?.id}
             onView={() =>
               handleViewApplication(application)
             }
@@ -304,11 +351,13 @@ export default function AllDeathApplications({
 
 type CardProps = {
   application: DeathApplication;
+  incoming?: boolean;
   onView: () => void;
 };
 
 function DeathApplicationCard({
   application,
+  incoming = false,
   onView,
 }: CardProps) {
   const statusStyle =
@@ -374,6 +423,11 @@ function DeathApplicationCard({
         <Text className="mt-1 text-[16px] font-bold text-[#171717]">
           {application.deceasedName}
         </Text>
+        {incoming ? (
+          <Text className="mt-1 text-[10px] font-bold text-[#8A6A00]">
+            Sent by a Village Officer
+          </Text>
+        ) : null}
 
         {/* Details */}
 

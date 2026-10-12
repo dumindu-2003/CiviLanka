@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -18,6 +18,9 @@ import type { DeathApplicationPayload } from "../../types/death";
 type Props = {
   onBack?: () => void;
   initialData?: DeathApplicationPayload;
+  title?: string;
+  subtitle?: string;
+  submitLabel?: string;
   onSaveDraft?: (payload: DeathApplicationPayload) => Promise<void>;
   onSubmit?: (
     payload: DeathApplicationPayload,
@@ -31,6 +34,9 @@ type FormData = DeathApplicationPayload;
 export default function DeathRegisterForm({
   onBack,
   initialData,
+  title = "Official Death Registration Application",
+  subtitle,
+  submitLabel = "Submit Death Registration",
   onSaveDraft,
   onSubmit,
   onUpdate,
@@ -38,6 +44,8 @@ export default function DeathRegisterForm({
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [showSignOff, setShowSignOff] = useState(false);
+  const [issues, setIssues] = useState<string[]>([]);
+  const scrollRef = useRef<ScrollView>(null);
 
   const [form, setForm] = useState<FormData>(initialData ?? {
     informantName: "",
@@ -56,21 +64,49 @@ export default function DeathRegisterForm({
     deceasedAddress: "",
     causeOfDeath: "",
   });
+  const formRef = useRef(form);
+  const stepRef = useRef(step);
+  formRef.current = form;
+  stepRef.current = step;
 
   const updateField = (
     field: keyof FormData,
     value: string
   ) => {
-    setForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
+    setForm((previous) => {
+      const next = { ...previous, [field]: value };
+      if (field === "dateOfBirth" || field === "dateOfDemise") {
+        const age = ageAtDemise(next.dateOfBirth, next.dateOfDemise);
+        if (age !== null) next.ageAtDeath = age;
+      }
+      return next;
+    });
   };
 
+  useEffect(() => {
+    setIssues((current) => (current.length > 0 ? validateDeathStep(step, form) : current));
+  }, [form, step]);
+
+  useEffect(() => {
+    const age = ageAtDemise(form.dateOfBirth, form.dateOfDemise);
+    if (age === null || age === form.ageAtDeath) return;
+    setForm((previous) => ({ ...previous, ageAtDeath: age }));
+  }, [form.dateOfBirth, form.dateOfDemise, form.ageAtDeath]);
+
   const handleNext = () => {
-    if (step === 1) {
+    const currentForm = formRef.current;
+    const currentStep = stepRef.current;
+    const found = validateDeathStep(currentStep, currentForm);
+    setIssues(found);
+    if (found.length > 0) {
+      scrollRef.current?.scrollToEnd({ animated: true });
+      return;
+    }
+    if (currentStep === 1) {
+      setIssues([]);
       setStep(2);
-    } else if (initialData && onUpdate) {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    } else if (onUpdate) {
       void handleUpdate();
     } else {
       setShowSignOff(true);
@@ -78,10 +114,16 @@ export default function DeathRegisterForm({
   };
 
   const handleUpdate = async () => {
+    const found = validateDeathReport(formRef.current);
+    setIssues(found);
+    if (found.length > 0) {
+      scrollRef.current?.scrollToEnd({ animated: true });
+      return;
+    }
     setSaving(true);
     try {
       if (!onUpdate) throw new Error("Updating is not available on this screen.");
-      await onUpdate(form);
+      await onUpdate(formRef.current);
     } catch (error) {
       Alert.alert(
         "Unable to update application",
@@ -103,9 +145,9 @@ export default function DeathRegisterForm({
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
-      const save = initialData ? onUpdate : onSaveDraft;
+      const save = onUpdate ?? onSaveDraft;
       if (!save) throw new Error("Saving is not available on this screen.");
-      await save(form);
+      await save(formRef.current);
     } catch (error) {
       Alert.alert(
         "Unable to save draft",
@@ -117,10 +159,17 @@ export default function DeathRegisterForm({
   };
 
   const handleConfirmSignOff = async (credentials: SignOffCredentials) => {
+    const found = validateDeathReport(formRef.current);
+    setIssues(found);
+    if (found.length > 0) {
+      setShowSignOff(false);
+      scrollRef.current?.scrollToEnd({ animated: true });
+      return;
+    }
     setSaving(true);
     try {
       if (!onSubmit) throw new Error("Submission is not available on this screen.");
-      await onSubmit(form, credentials);
+      await onSubmit(formRef.current, credentials);
       setShowSignOff(false);
     } catch (error) {
       Alert.alert(
@@ -164,7 +213,7 @@ export default function DeathRegisterForm({
           </Text>
 
           <Text className="mt-1 text-[7px] text-[#D7DFEC]">
-            Official Death Registration Application
+            {title}
           </Text>
         </View>
 
@@ -248,6 +297,8 @@ export default function DeathRegisterForm({
           PAGE CONTENT
       ====================================================== */}
       <ScrollView
+        ref={scrollRef}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 10,
@@ -255,6 +306,11 @@ export default function DeathRegisterForm({
           paddingBottom: 30,
         }}
       >
+        {subtitle ? (
+          <Text className="mb-2 text-[11px] leading-4 text-[#596A7B]">
+            {subtitle}
+          </Text>
+        ) : null}
         {step === 1 ? (
           <StepOne
             form={form}
@@ -271,6 +327,16 @@ export default function DeathRegisterForm({
             BUTTONS
         ================================================== */}
 
+        {issues.length > 0 ? (
+          <View className="mt-3 rounded-md border border-[#F1B8B8] bg-[#FDECEC] px-3 py-2">
+            {issues.map((issue) => (
+              <Text key={issue} className="text-[11px] leading-4 text-[#C62828]">
+                {issue}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
         <View className="mt-4">
           {/* Next / Submit */}
           <Pressable
@@ -281,9 +347,29 @@ export default function DeathRegisterForm({
             <Text className="text-[11px] font-bold text-white">
               {step === 1
                 ? "Next: Deceased Details →"
-                : initialData ? "Save Death Application Changes" : "Submit Death Registration"}
+                : onUpdate ? "Save Death Application Changes" : submitLabel}
             </Text>
           </Pressable>
+
+          {step === 2 && onUpdate && onSubmit ? (
+            <Pressable
+              onPress={() => {
+                const found = validateDeathReport(formRef.current);
+                setIssues(found);
+                if (found.length > 0) {
+                  scrollRef.current?.scrollToEnd({ animated: true });
+                  return;
+                }
+                setShowSignOff(true);
+              }}
+              disabled={saving}
+              className="mt-2 h-[42px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
+            >
+              <Text className="text-[11px] font-bold text-white">
+                {submitLabel}
+              </Text>
+            </Pressable>
+          ) : null}
 
           {/* Save Draft */}
           <Pressable
@@ -292,7 +378,7 @@ export default function DeathRegisterForm({
             className="mt-2 h-[42px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
           >
             <Text className="text-[11px] font-bold text-white">
-              {initialData ? "Save Changes" : "▣ Save as Draft"}
+              {onUpdate ? "Save Changes" : "▣ Save as Draft"}
             </Text>
           </Pressable>
 
@@ -311,13 +397,114 @@ export default function DeathRegisterForm({
         </View>
       </ScrollView>
       <AuthorizeSignOffModal
-        visible={showSignOff && !initialData}
+        visible={showSignOff}
         title="Authorize death registration"
         onCancel={() => setShowSignOff(false)}
         onConfirm={(credentials) => void handleConfirmSignOff(credentials)}
       />
     </SafeAreaView>
   );
+}
+
+function validateDeathStep(step: number, form: FormData) {
+  return step === 1 ? validateInformant(form) : validateDeceased(form);
+}
+
+function validateDeathReport(form: FormData) {
+  return [...validateInformant(form), ...validateDeceased(form)];
+}
+
+function validateInformant(form: FormData) {
+  const issues: string[] = [];
+  if (!personName(form.informantName)) issues.push("Enter the informant's full name (at least 3 letters).");
+  if (!nicOk(form.nic)) issues.push("Enter a valid informant NIC (12 digits, or 9 digits followed by V or X).");
+  if (form.relationship.trim().length < 2 || form.relationship.trim().length > 50) {
+    issues.push("Enter the informant's relationship (up to 50 characters).");
+  }
+  if (!phoneOk(form.informantContact)) issues.push("Enter a contact number as 07XXXXXXXX or +947XXXXXXXX.");
+  if (form.placeOfDemise.trim().length < 2 || form.placeOfDemise.trim().length > 150) {
+    issues.push("Enter the place of death (up to 150 characters).");
+  }
+  const deathDate = parseIsoDate(form.dateOfDemise);
+  if (!deathDate) issues.push("Select the date of death.");
+  else if (deathDate > startOfToday()) issues.push("The date of death cannot be in the future.");
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.timeOfDemise.trim())) {
+    issues.push("Enter the time of death as HH:mm.");
+  }
+  return issues;
+}
+
+function validateDeceased(form: FormData) {
+  const issues: string[] = [];
+  if (!nicOk(form.deceasedNic)) issues.push("Enter a valid NIC for the deceased person.");
+  if (!personName(form.deceasedName)) issues.push("Enter the deceased person's full legal name.");
+  if (form.gender !== "Male" && form.gender !== "Female") issues.push("Select the gender.");
+  const birth = parseIsoDate(form.dateOfBirth);
+  const death = parseIsoDate(form.dateOfDemise);
+  if (!birth) issues.push("Select the date of birth.");
+  else if (birth > startOfToday()) issues.push("The date of birth cannot be in the future.");
+  else if (death && birth > death) issues.push("The date of birth must be on or before the date of death.");
+  if (!/^\d{1,3}$/.test(form.ageAtDeath.trim()) || Number(form.ageAtDeath) > 130) {
+    issues.push("Enter the age at death as a whole number from 0 to 130.");
+  }
+  if (!MARITAL_STATUSES.includes(form.maritalStatus as (typeof MARITAL_STATUSES)[number])) {
+    issues.push("Select the marital status: Single, Married, Widowed, or Divorced.");
+  }
+  if (form.deceasedAddress.trim().length < 5 || form.deceasedAddress.trim().length > 200) {
+    issues.push("Enter the permanent address (5 to 200 characters).");
+  }
+  if (form.causeOfDeath.trim().length < 3) issues.push("Enter the cause of death.");
+  if (form.causeOfDeath.trim().length > 200) issues.push("The cause of death must be 200 characters or fewer.");
+  return issues;
+}
+
+function personName(value: string) {
+  const name = value.trim();
+  return name.length >= 3 && name.length <= 100 && !/^\d+$/.test(name);
+}
+
+function nicOk(value: string) {
+  const nic = value.trim().toUpperCase();
+  return /^\d{12}$/.test(nic) || /^\d{9}[VX]$/.test(nic);
+}
+
+function phoneOk(value: string) {
+  const phone = value.replace(/[\s-]/g, "");
+  return /^(?:0\d{9}|\+94\d{9})$/.test(phone) && phone.length <= 15;
+}
+
+function parseIsoDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (
+    date.getFullYear() !== Number(match[1]) ||
+    date.getMonth() !== Number(match[2]) - 1 ||
+    date.getDate() !== Number(match[3])
+  ) {
+    return null;
+  }
+  return date;
+}
+
+const MARITAL_STATUSES = ["Single", "Married", "Widowed", "Divorced"] as const;
+
+function ageAtDemise(dateOfBirth: string, dateOfDemise: string) {
+  const birth = parseIsoDate(dateOfBirth);
+  const death = parseIsoDate(dateOfDemise) ?? startOfToday();
+  if (!birth || birth > death) return null;
+  let years = death.getFullYear() - birth.getFullYear();
+  const beforeBirthday =
+    death.getMonth() < birth.getMonth() ||
+    (death.getMonth() === birth.getMonth() && death.getDate() < birth.getDate());
+  if (beforeBirthday) years -= 1;
+  if (years < 0 || years > 130) return null;
+  return String(years);
+}
+
+function startOfToday() {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate());
 }
 
 /* =========================================================
@@ -539,21 +726,36 @@ function StepTwo({
         {/* Age */}
         <FieldLabel text="Age at Demise" />
 
-        <InputField
-          value={form.ageAtDeath}
-          onChangeText={(value) =>
-            updateField("ageAtDeath", value)
-          }
-          keyboardType="numeric"
-        />
+        <View className="h-[38px] justify-center rounded-md border border-[#DDE2E8] bg-[#F5F6F7] px-2">
+          <Text className={`text-[14px] font-bold ${form.ageAtDeath ? "text-[#171717]" : "text-[#999999]"}`}>
+            {form.ageAtDeath ? `${form.ageAtDeath} years` : "Fills when the date of birth is selected"}
+          </Text>
+        </View>
 
         {/* Marital Status */}
         <FieldLabel text="Marital Status" />
 
-        <InputField
-          value={form.maritalStatus}
-          onChangeText={(value) => updateField("maritalStatus", value)}
-        />
+        <View className="flex-row flex-wrap">
+          {MARITAL_STATUSES.map((status) => (
+            <Pressable
+              key={status}
+              onPress={() => updateField("maritalStatus", status)}
+              className={`mb-1 mr-1 rounded-md px-3 py-2 ${
+                form.maritalStatus === status
+                  ? "bg-[#0B2855]"
+                  : "border border-[#D8DDE4] bg-white"
+              }`}
+            >
+              <Text
+                className={`text-[9px] font-medium ${
+                  form.maritalStatus === status ? "text-white" : "text-[#333333]"
+                }`}
+              >
+                {status}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
 
         {/* Address */}
         <FieldLabel text="Permanent Residential Address" />

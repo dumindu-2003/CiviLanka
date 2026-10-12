@@ -146,6 +146,11 @@ export default function VillageDashboardScreen() {
     nav.navigate('MyNicForms');
   };
 
+  const openDeathReport = () => {
+    setMenuOpen(false);
+    nav.navigate('DeathReports');
+  };
+
   const openPreview = (kind: CertKind, ref?: string) => {
     if (ref) nav.navigate('CertificateDetail', { kind, ref });
     else nav.navigate('CertificatePreview', { kind });
@@ -195,6 +200,10 @@ export default function VillageDashboardScreen() {
           <Pressable onPress={openFilledNic} accessibilityRole="button" style={styles.viewNicBtn}>
             <Ionicons name="folder-open-outline" size={18} color={colors.navy} />
             <Text style={styles.viewNicText}>View Filled NIC Forms</Text>
+          </Pressable>
+          <Pressable onPress={openDeathReport} accessibilityRole="button" style={styles.deathBtn}>
+            <Ionicons name="paper-plane-outline" size={18} color={colors.navy} />
+            <Text style={styles.deathText}>Send a Death Report</Text>
           </Pressable>
 
           <View style={styles.sectionRow}>
@@ -251,6 +260,7 @@ export default function VillageDashboardScreen() {
               <MenuRow icon="heart-outline" label="Married Certificate" onPress={() => { setMenuOpen(false); openPreview('MARRIAGE'); }} />
               <MenuRow icon="document-text-outline" label="Fill NIC Form" onPress={openNicForm} />
               <MenuRow icon="folder-open-outline" label="Filled NIC Forms" onPress={openFilledNic} />
+              <MenuRow icon="paper-plane-outline" label="Send a Death Report" onPress={openDeathReport} />
               <MenuRow icon="newspaper-outline" label="News" onPress={() => goTab('News')} />
               <MenuRow icon="notifications-outline" label="Notifications" onPress={() => goTab('Notification')} />
               <MenuRow icon="person-outline" label="Profile" onPress={() => goTab('Profile')} />
@@ -338,6 +348,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   viewNicText: { color: colors.navy, fontSize: 15, fontWeight: '700' },
+  deathBtn: {
+    marginTop: 10,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.amber,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  deathText: { color: colors.navy, fontSize: 15, fontWeight: '700' },
 
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
