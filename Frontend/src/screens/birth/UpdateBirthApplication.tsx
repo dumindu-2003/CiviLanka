@@ -105,6 +105,16 @@ export default function UpdateBirthApplication({
           />
 
           <InfoRow
+            label="Application Reference"
+            value={registration.appRef}
+          />
+
+          <InfoRow
+            label="Submitted On"
+            value={registration.submittedOn}
+          />
+
+          <InfoRow
             label="Baby Name"
             value={registration.babyName}
           />
@@ -115,27 +125,84 @@ export default function UpdateBirthApplication({
           />
 
           <InfoRow
+            label="Birth Time"
+            value={registration.birthTime}
+          />
+
+          <InfoRow
             label="Birth Place"
             value={registration.birthPlace}
           />
+
+          <InfoRow
+            label="Gender"
+            value={registration.gender}
+          />
+
+          <InfoRow
+            label="Birth Weight"
+            value={registration.birthWeight}
+          />
+
+          <InfoRow
+            label="Hospital"
+            value={registration.hospitalName}
+          />
+
+          <InfoRow
+            label="Registration Date"
+            value={registration.registrationDate}
+          />
         </SectionCard>
 
-        {/* PARENTS DETAILS */}
-        <SectionCard title="Parents' Details">
+        <SectionCard title="Father's Details">
           <InfoRow
             label="Father's Name"
             value={registration.fatherName}
           />
 
           <InfoRow
+            label="Father's NIC"
+            value={registration.fatherNic}
+          />
+
+          <InfoRow
+            label="Father's Occupation"
+            value={registration.fatherOccupation}
+          />
+
+          <InfoRow
+            label="Father's Address"
+            value={registration.fatherAddress}
+          />
+        </SectionCard>
+
+        <SectionCard title="Mother's Details">
+          <InfoRow
             label="Mother's Name"
             value={registration.motherName}
+          />
+
+          <InfoRow
+            label="Mother's NIC"
+            value={registration.motherNic}
+          />
+
+          <InfoRow
+            label="Mother's Occupation"
+            value={registration.motherOccupation}
+          />
+
+          <InfoRow
+            label="Mother's Address"
+            value={registration.motherAddress}
           />
         </SectionCard>
 
         <Pressable
           onPress={onEdit}
           className="mb-4 items-center rounded-xl border border-[#0B2855] bg-white py-4"
+          accessibilityRole="button"
         >
           <Text className="text-[14px] font-bold text-[#0B2855]">
             Edit Application Details

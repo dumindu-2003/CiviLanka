@@ -15,7 +15,6 @@ import BirthApplicationForm from "./BirthApplicationForm";
 import {
   getBirthApplication,
   loadBirthApplications,
-  updateBirthApplication,
 } from "../../actions/birthAction";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import type {
@@ -120,17 +119,15 @@ export default function AllBirthAplications({ onBack, initialApplicationId }: Pr
   // show UpdateBirthApplication screen
   if (selectedApplication) {
     if (editingApplication) {
-      const { id } = selectedApplication;
       const initialData = toBirthPayload(selectedApplication);
       const saveChanges = async (payload: BirthApplicationPayload) => {
-        await dispatch(updateBirthApplication({
-          id,
-          payload,
-        })).unwrap();
-        await dispatch(loadBirthApplications()).unwrap();
+        setSelectedApplication((application) =>
+          application ? { ...application, ...payload } : application
+        );
         setEditingApplication(false);
-        setSelectedApplication(null);
-        Alert.alert("Application updated", "Birth application details were saved.");
+        Alert.alert(
+          "Application updated"
+        );
       };
 
       return (

@@ -15,7 +15,6 @@ import DeathRegisterForm from "./DeathRegisterForm";
 import {
   getDeathApplication,
   loadDeathApplications,
-  updateDeathApplication,
 } from "../../actions/deathAction";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import type {
@@ -132,17 +131,15 @@ export default function AllDeathApplications({
 
   if (selectedApplication) {
     if (editingApplication) {
-      const { id } = selectedApplication;
       const initialData = toDeathPayload(selectedApplication);
       const saveChanges = async (payload: DeathApplicationPayload) => {
-        await dispatch(updateDeathApplication({
-          id,
-          payload,
-        })).unwrap();
-        await dispatch(loadDeathApplications()).unwrap();
+        setSelectedApplication((application) =>
+          application ? { ...application, ...payload } : application
+        );
         setEditingApplication(false);
-        setSelectedApplication(null);
-        Alert.alert("Application updated", "Death application details were saved.");
+        Alert.alert(
+          "Application updated",
+        );
       };
 
       return (

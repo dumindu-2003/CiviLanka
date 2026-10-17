@@ -24,8 +24,8 @@ export const createDeathApplication = createAsyncThunk(
 
 export const updateDeathApplication = createAsyncThunk(
   'death/updateApplication',
-  (arg: { id: string; payload: DeathApplicationPayload }) =>
-    deathService.update(arg.id, arg.payload),
+  (arg: { id: string; payload: DeathApplicationPayload; status?: 'Pending' }) =>
+    deathService.update(arg.id, arg.payload, arg.status),
 );
 
 export const submitDeathApplication = createAsyncThunk(

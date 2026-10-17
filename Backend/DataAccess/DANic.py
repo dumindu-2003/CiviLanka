@@ -4,7 +4,7 @@ from Interfaces.INic import INic
 
 class DANic(DAApplication, INic):
     ProcedureName = "sp_nic"
-    AllowStatusUpdate = False
+    AllowedUpdateStatuses = set()
     # Keys match the village NIC form. applicant_id is citizens.citizen_id.
     # spouse_name is an existing column and is not on the form; it stays accepted.
     AllowedDataFields = {

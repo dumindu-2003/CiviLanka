@@ -71,6 +71,18 @@ const ACTIONS: {
     icon: 'id-card-outline',
     route: 'NicPendingList',
   },
+
+  {
+    label: 'My Birth Applications',
+    icon: 'people-outline',
+    route: 'BirthDashboard',
+  },
+
+  {
+    label: 'My Death Applications',
+    icon: 'document-text-outline',
+    route: 'DeathDashboard',
+  },
 ];
 
 function StatCard({ label, value, note, icon }: { label: string; value: number | string; note: string; icon: IconName }) {

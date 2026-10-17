@@ -17,8 +17,12 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
+import BirthApplicationForm from '../birth/BirthApplicationForm';
+import DeathRegisterForm from '../death/DeathRegisterForm';
 import { AuthorizeSignOffModal } from '../../components/AuthorizeSignOffModal';
 import { approveApplication, getApplicationDetail, rejectApplication } from '../../services/districtService';
+import type { BirthApplicationPayload } from '../../types/birth';
+import type { DeathApplicationPayload } from '../../types/death';
 import type { SignOffCredentials } from '../../types/auth';
 import type { Decision } from '../../types/district';
 import { colors } from '../../theme/colors';
@@ -84,6 +88,48 @@ const formatValue = (value: unknown): string | null => {
   return null;
 };
 
+const readText = (record: Record<string, unknown>, key: string): string => {
+  const value = record[key];
+  return value === null || value === undefined ? '' : String(value);
+};
+
+const toBirthPayload = (record: Record<string, unknown>): BirthApplicationPayload => ({
+  babyName: readText(record, 'baby_full_name'),
+  birthDate: readText(record, 'date_of_birth').slice(0, 10),
+  birthTime: readText(record, 'time_of_birth').split('T').pop() ?? '',
+  birthPlace: readText(record, 'place_of_birth'),
+  gender: readText(record, 'gender'),
+  birthWeight: readText(record, 'birth_weight'),
+  fatherName: readText(record, 'father_name'),
+  fatherNic: readText(record, 'father_nic'),
+  fatherOccupation: readText(record, 'father_occupation'),
+  fatherAddress: readText(record, 'father_address'),
+  motherName: readText(record, 'mother_name'),
+  motherNic: readText(record, 'mother_nic'),
+  motherOccupation: readText(record, 'mother_occupation'),
+  motherAddress: readText(record, 'mother_address'),
+  hospitalName: readText(record, 'hospital_name'),
+  registrationDate: readText(record, 'registration_date').slice(0, 10),
+});
+
+const toDeathPayload = (record: Record<string, unknown>): DeathApplicationPayload => ({
+  informantName: readText(record, 'informant_name'),
+  nic: readText(record, 'informant_nic'),
+  relationship: readText(record, 'informant_relationship'),
+  informantContact: readText(record, 'informant_contact'),
+  placeOfDemise: readText(record, 'place_of_death'),
+  dateOfDemise: readText(record, 'date_of_death').slice(0, 10),
+  timeOfDemise: readText(record, 'time_of_death').split('T').pop() ?? '',
+  deceasedNic: readText(record, 'deceased_nic'),
+  deceasedName: readText(record, 'deceased_name'),
+  gender: readText(record, 'gender'),
+  dateOfBirth: readText(record, 'date_of_birth').slice(0, 10),
+  ageAtDeath: readText(record, 'age_at_death'),
+  causeOfDeath: readText(record, 'cause_of_death'),
+  maritalStatus: readText(record, 'marital_status'),
+  deceasedAddress: readText(record, 'permanent_address'),
+});
+
 function SummaryField({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.summaryField}>
@@ -97,6 +143,7 @@ export default function DistrictApplicationDetailScreen() {
   const navigation = useNavigation<DetailNavigation>();
   const { params } = useRoute<DetailRoute>();
   const [retryCount, setRetryCount] = useState(0);
+  const [editingApplication, setEditingApplication] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState(params.status);
   const [decision, setDecision] = useState<Decision | null>(null);
   const [reason, setReason] = useState('');
@@ -149,11 +196,94 @@ export default function DistrictApplicationDetailScreen() {
       ? requestState
       : null;
   const loading = currentRequest === null;
-  const fields = currentRequest?.detail
-    ? Object.entries(currentRequest.detail)
+  const [editedDetail, setEditedDetail] = useState<Record<string, unknown> | null>(null);
+  const detail = editedDetail ?? currentRequest?.detail ?? null;
+  const fields = detail
+    ? Object.entries(detail)
         .map(([key, value]) => ({ key, value: formatValue(value) }))
         .filter((field): field is { key: string; value: string } => field.value !== null)
     : [];
+  const canEditPendingApplication =
+    params.category !== 'Marriage' &&
+    applicationStatus === 'Pending';
+
+  const canSavePendingChanges = () => {
+    if (!detail || !canEditPendingApplication) {
+      throw new Error('Only your own pending application can be edited.');
+    }
+  };
+
+  const finishPendingUpdate = (updatedFields: Record<string, unknown>) => {
+    canSavePendingChanges();
+    setEditedDetail((previous) => ({ ...(previous ?? detail), ...updatedFields }));
+    setEditingApplication(false);
+    Alert.alert(
+      'Application updated',
+    );
+  };
+
+  const saveBirthChanges = async (payload: BirthApplicationPayload) => {
+    finishPendingUpdate({
+      baby_full_name: payload.babyName,
+      date_of_birth: payload.birthDate,
+      time_of_birth: payload.birthTime,
+      place_of_birth: payload.birthPlace,
+      gender: payload.gender,
+      birth_weight: payload.birthWeight,
+      father_name: payload.fatherName,
+      father_nic: payload.fatherNic,
+      father_occupation: payload.fatherOccupation,
+      father_address: payload.fatherAddress,
+      mother_name: payload.motherName,
+      mother_nic: payload.motherNic,
+      mother_occupation: payload.motherOccupation,
+      mother_address: payload.motherAddress,
+      hospital_name: payload.hospitalName,
+      registration_date: payload.registrationDate,
+    });
+  };
+
+  const saveDeathChanges = async (payload: DeathApplicationPayload) => {
+    finishPendingUpdate({
+      informant_name: payload.informantName,
+      informant_nic: payload.nic,
+      informant_relationship: payload.relationship,
+      informant_contact: payload.informantContact,
+      place_of_death: payload.placeOfDemise,
+      date_of_death: payload.dateOfDemise,
+      time_of_death: payload.timeOfDemise,
+      deceased_nic: payload.deceasedNic,
+      deceased_name: payload.deceasedName,
+      gender: payload.gender,
+      date_of_birth: payload.dateOfBirth,
+      age_at_death: payload.ageAtDeath,
+      cause_of_death: payload.causeOfDeath,
+      marital_status: payload.maritalStatus,
+      permanent_address: payload.deceasedAddress,
+    });
+  };
+
+  if (editingApplication && detail && canEditPendingApplication) {
+    if (params.category === 'Birth') {
+      return (
+        <BirthApplicationForm
+          initialData={toBirthPayload(detail)}
+          onBack={() => setEditingApplication(false)}
+          onUpdate={saveBirthChanges}
+        />
+      );
+    }
+
+    if (params.category === 'Death') {
+      return (
+        <DeathRegisterForm
+          initialData={toDeathPayload(detail)}
+          onBack={() => setEditingApplication(false)}
+          onUpdate={saveDeathChanges}
+        />
+      );
+    }
+  }
 
   const startDecision = (nextDecision: Decision) => {
     if (applicationStatus !== 'Pending') return;
@@ -237,6 +367,17 @@ export default function DistrictApplicationDetailScreen() {
           <SummaryField label="Submitted On" value={params.submittedOn || 'Not available'} />
           <SummaryField label="Current Status" value={applicationStatus} />
         </View>
+
+        {canEditPendingApplication ? (
+          <Pressable
+            onPress={() => setEditingApplication(true)}
+            style={styles.editButton}
+            accessibilityRole="button"
+          >
+            <Ionicons name="create-outline" size={18} color={colors.white} />
+            <Text style={styles.decisionText}>Edit My Pending Application</Text>
+          </Pressable>
+        ) : null}
 
         {applicationStatus === 'Pending' ? (
           <View style={styles.decisionRow}>
@@ -380,6 +521,16 @@ const styles = StyleSheet.create({
   approveButton: { backgroundColor: colors.green },
   rejectButton: { backgroundColor: colors.red },
   decisionText: { color: colors.white, fontSize: 13, fontWeight: '700' },
+  editButton: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 14,
+    borderRadius: 9,
+    backgroundColor: colors.navy,
+  },
   reasonCard: { marginTop: 14, padding: 14, borderRadius: 10, backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F2C5C5' },
   reasonTitle: { color: colors.red, fontSize: 12, fontWeight: '700', marginBottom: 5 },
   modalBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.55)' },
