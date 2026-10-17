@@ -4,7 +4,7 @@ from Interfaces.IBirth import IBirth
 
 class DABirth(DAApplication, IBirth):
     ProcedureName = "sp_birth"
-    AllowStatusUpdate = False
+    AllowedUpdateStatuses = {"Pending"}
     AllowedDataFields = {
         "baby_full_name",
         "date_of_birth",

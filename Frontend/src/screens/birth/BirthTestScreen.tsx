@@ -23,6 +23,7 @@ export default function BirthTestScreen() {
 
   const [showAllApplications, setShowAllApplications] =
   useState(false);
+  const [applicationToOpen, setApplicationToOpen] = useState<string | null>(null);
 
   useEffect(() => {
     void dispatch(loadBirthApplications());
@@ -64,7 +65,11 @@ export default function BirthTestScreen() {
   if (showAllApplications) {
     return (
         <AllBirthAplications
-        onBack={() => setShowAllApplications(false)}
+        onBack={() => {
+          setShowAllApplications(false);
+          setApplicationToOpen(null);
+        }}
+        initialApplicationId={applicationToOpen}
         />
     );
   }
@@ -78,13 +83,14 @@ export default function BirthTestScreen() {
   };
 
   const handleViewCertificates = () => {
+    setApplicationToOpen(null);
     setShowAllApplications(true);
     console.log("View All Birth Certificates");
   };
 
   const handleViewApplication = (id: string) => {
+    setApplicationToOpen(id);
     setShowAllApplications(true);
-    console.log("View application:", id);
   };
 
   const rejectedCount = registrations.filter((item) => item.status === "Rejected").length;

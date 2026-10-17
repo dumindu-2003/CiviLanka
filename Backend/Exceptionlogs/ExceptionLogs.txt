@@ -7,9 +7,47 @@
 10/09/2026 21:43:22 ~ Update ~ Record not found, or it can no longer be edited.;
 10/09/2026 21:46:04 ~ Reject ~ A rejection reason is required.;
 10/09/2026 21:46:36 ~ Approve ~ The UPDATE statement conflicted with the FOREIGN KEY constraint "FK__death_cer__appro__40F9A68C". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.district_registrar", column 'district_registrar_id'.;
+<<<<<<< HEAD
 10/12/2026 19:46:50 ~ Update ~ Record not found, or it can no longer be edited.;
 10/12/2026 20:19:21 ~ Create ~ Cannot insert the value NULL into column 'applicant_id', table 'civil_registration_db.dbo.death_certificate_application'; column does not allow nulls. INSERT fails.;
 10/12/2026 20:20:03 ~ Decide ~ Only a Death Registrar can approve or reject a death report.;
 10/12/2026 20:20:48 ~ Update ~ This death report is approved and can no longer be edited.;
 10/12/2026 21:30:40 ~ Approve ~ The UPDATE statement conflicted with the FOREIGN KEY constraint "FK__nic_appli__appro__43D61337". The conflict occurred in database "civil_registration_db", table "dbo.district_registrar", column 'district_registrar_id'.;
 10/12/2026 21:33:14 ~ Approve ~ The UPDATE statement conflicted with the FOREIGN KEY constraint "FK__nic_appli__appro__43D61337". The conflict occurred in database "civil_registration_db", table "dbo.district_registrar", column 'district_registrar_id'.;
+=======
+10/12/2026 19:27:22 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:31 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:33 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:37 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 19:27:45 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 22:02:09 ~ Reject ~ A rejection reason is required.;
+10/12/2026 22:17:34 ~ Update ~ Record not found, or it can no longer be edited.;
+10/12/2026 22:17:37 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:04:51 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:04:54 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:10:04 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:10:08 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:10:42 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:10:47 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:15:45 ~ Update ~ Access denied. Permission required: BIRTH_CREATE;
+10/17/2026 22:15:52 ~ Update ~ Access denied. Permission required: BIRTH_CREATE;
+10/17/2026 22:16:00 ~ Update ~ Access denied. Permission required: BIRTH_CREATE;
+10/17/2026 22:16:26 ~ Update ~ Access denied. Permission required: BIRTH_CREATE;
+10/17/2026 22:17:43 ~ Update ~ Access denied. Permission required: BIRTH_CREATE;
+10/17/2026 22:18:59 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:19:03 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:24:44 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:24:47 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:25:10 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:25:17 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:29:27 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:29:30 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:32:22 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:32:32 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:33:07 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:35:19 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:35:27 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:38:37 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:41:46 ~ Update ~ Record not found, or it can no longer be edited.;
+10/17/2026 22:41:56 ~ Update ~ Record not found, or it can no longer be edited.;
+>>>>>>> gagana

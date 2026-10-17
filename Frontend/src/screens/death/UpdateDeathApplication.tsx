@@ -124,6 +124,16 @@ export default function UpdateDeathApplication({
           />
 
           <InfoRow
+            label="Application Reference"
+            value={application.appRef}
+          />
+
+          <InfoRow
+            label="Submitted On"
+            value={application.submittedOn}
+          />
+
+          <InfoRow
             label="Certificate Type"
             value="Death Certificate (Official Notification)"
           />
@@ -175,11 +185,6 @@ export default function UpdateDeathApplication({
           />
 
           <InfoRow
-            label="Time of Death"
-            value={application.timeOfDemise}
-          />
-
-          <InfoRow
             label="Marital Status"
             value={application.maritalStatus}
           />
@@ -222,6 +227,7 @@ export default function UpdateDeathApplication({
 
         </SectionCard>
 
+<<<<<<< HEAD
         {canEdit ? (
           <Pressable
             onPress={onEdit}
@@ -238,6 +244,17 @@ export default function UpdateDeathApplication({
             </Text>
           </View>
         ) : null}
+=======
+        <Pressable
+          onPress={onEdit}
+          className="mb-4 items-center rounded-xl border border-[#0B2855] bg-white py-4"
+          accessibilityRole="button"
+        >
+          <Text className="text-[13px] font-bold text-[#0B2855]">
+            Edit Application Details
+          </Text>
+        </Pressable>
+>>>>>>> gagana
 
         {/* =================================================
             CAUSE OF DEATH

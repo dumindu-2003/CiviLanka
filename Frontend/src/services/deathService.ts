@@ -71,8 +71,8 @@ export const createDeathAndSubmit = (data: DeathData, credentials: SignOffCreden
 // ── EDIT (own Draft / Rejected record only, it goes back to Draft) ─────────
 // POST /api/death/Update
 // body    : { app_id, data: {...} }
-export const updateDeath = (appId: number, data: DeathData) =>
-  apiClient.post<AppSaveResult>('/api/death/Update', { app_id: appId, data });
+export const updateDeath = (appId: number, data: DeathData, status?: 'Pending') =>
+  apiClient.post<AppSaveResult>('/api/death/Update', { app_id: appId, data, status });
 
 // ── SUBMIT A DRAFT (Draft -> Pending, needs the authorizing officer) ───────
 // POST /api/death/Submit
@@ -119,6 +119,15 @@ const timeForInput = (value?: string | null) => {
   return match?.[1] ?? '';
 };
 const optionalText = (value: string) => value.trim() || undefined;
+
+const normalizeStatus = (value: string): DeathApplication['status'] => {
+  const status = value.toLowerCase();
+  if (status === 'draft') return 'Draft';
+  if (status === 'pending') return 'Pending';
+  if (status === 'approved') return 'Approved';
+  if (status === 'rejected') return 'Rejected';
+  throw new Error(`Unsupported death application status: ${value}`);
+};
 
 function toDate(value: string, label: string, required: true): string;
 function toDate(value: string, label: string, required?: false): string | undefined;
@@ -192,7 +201,7 @@ const mapDeathRecord = (record: DeathRecord): DeathApplication => ({
   id: String(record.death_app_id),
   appRef: record.app_ref,
   applicantId: '',
-  status: record.status,
+  status: normalizeStatus(record.status),
   rejectionReason: record.rejection_reason ?? '',
   submittedOn: record.created_at ?? '',
   submittedBy: record.submitted_by == null ? '' : String(record.submitted_by),
@@ -212,7 +221,7 @@ const mapDeathListItem = (item: DeathListItem): DeathApplication => ({
   id: String(item.app_id),
   appRef: item.app_ref,
   applicantId: '',
-  status: item.status,
+  status: normalizeStatus(item.status),
   rejectionReason: item.rejection_reason ?? '',
   submittedOn: item.created_at,
   submittedBy: item.submitted_by == null ? '' : String(item.submitted_by),
@@ -253,8 +262,12 @@ export const deathService = {
     return createDeathAndSubmit(data, credentials);
   },
 
-  async update(id: string, payload: DeathApplicationPayload): Promise<AppSaveResult> {
-    return updateDeath(toAppId(id), toDeathData(payload));
+  async update(
+    id: string,
+    payload: DeathApplicationPayload,
+    status?: 'Pending',
+  ): Promise<AppSaveResult> {
+    return updateDeath(toAppId(id), toDeathData(payload), status);
   },
 
   async submit(id: string, credentials: SignOffCredentials): Promise<AppSaveResult> {

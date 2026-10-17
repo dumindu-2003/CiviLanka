@@ -7,7 +7,7 @@ from Static.ActionTypes import ApplicationAction
 
 class DADeath(DAApplication, IDeath):
     ProcedureName = "sp_death"
-    AllowStatusUpdate = False
+    AllowedUpdateStatuses = {"Pending"}
     AllowedDataFields = {
         "deceased_name",
         "deceased_nic",

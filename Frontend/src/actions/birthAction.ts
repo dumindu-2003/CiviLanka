@@ -24,8 +24,8 @@ export const createBirthApplication = createAsyncThunk(
 
 export const updateBirthApplication = createAsyncThunk(
   'birth/updateApplication',
-  (arg: { id: string; payload: BirthApplicationPayload }) =>
-    birthService.update(arg.id, arg.payload),
+  (arg: { id: string; payload: BirthApplicationPayload; status?: 'Pending' }) =>
+    birthService.update(arg.id, arg.payload, arg.status),
 );
 
 export const submitBirthApplication = createAsyncThunk(

@@ -8,7 +8,7 @@ class DAApplication(DABase):
     """Same actions for sp_birth / sp_death / sp_marriage / sp_nic - the subclass only sets ProcedureName."""
 
     AllowedDataFields = None
-    AllowStatusUpdate = True
+    AllowedUpdateStatuses = None
 
     def _ValidateData(self, requestAPI: ApplicationSaveRequestAPI) -> Response | None:
         if self.AllowedDataFields is None:
@@ -49,8 +49,12 @@ class DAApplication(DABase):
     def Update(self, requestAPI: ApplicationSaveRequestAPI) -> Response:
         if not requestAPI.app_id or requestAPI.app_id <= 0:
             return self._Fail(400, "A positive application ID is required.")
-        if not self.AllowStatusUpdate and requestAPI.status is not None:
-            return self._Fail(400, "Application status can only be changed through the workflow actions.")
+        if (
+            requestAPI.status is not None
+            and self.AllowedUpdateStatuses is not None
+            and requestAPI.status not in self.AllowedUpdateStatuses
+        ):
+            return self._Fail(400, "This application status cannot be used for an update.")
         failure = self._ValidateData(requestAPI)
         if failure is not None:
             return failure

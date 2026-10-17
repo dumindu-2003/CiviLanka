@@ -101,3 +101,19 @@ The SQL stored-procedure definitions are deployment dependencies and are not
 included in this repository. They must map those keys to the corresponding
 table columns, generate the primary key/reference, populate server-managed
 columns, and enforce the project's ownership/authorization rules.
+
+Birth and Death registrar roles need `BIRTH_VIEW` / `BIRTH_CREATE` and
+`DEATH_VIEW` / `DEATH_CREATE`, respectively, to manage their own applications.
+Run `Database/grant_birth_death_registrar_permissions.sql` to grant those
+permissions to the `Birth Registrar` and `Death Registrar` roles. The script
+resolves each role by its standard role code or by the display name used in
+officer enrollment, and fails without changes if it cannot resolve the
+required roles or permissions.
+
+Birth and Death application updates may omit `status` for the existing Draft /
+Rejected edit workflow, or send `status: "Pending"` when editing a Pending
+application. The `sp_birth` and `sp_death` stored procedures must enforce that
+Pending updates are limited to the submitting officer's own Pending record,
+update the supplied application fields, and leave the status Pending. These
+procedure definitions are not included here, so deploy this API/UI change only
+with matching stored procedure updates. Approved applications remain read-only.

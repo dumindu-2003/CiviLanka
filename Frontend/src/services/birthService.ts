@@ -70,8 +70,8 @@ export const createBirthAndSubmit = (data: BirthData, credentials: SignOffCreden
 // ── EDIT (own Draft / Rejected record only, it goes back to Draft) ─────────
 // POST /api/birth/Update
 // body    : { app_id, data: {...} }
-export const updateBirth = (appId: number, data: BirthData) =>
-  apiClient.post<AppSaveResult>('/api/birth/Update', { app_id: appId, data });
+export const updateBirth = (appId: number, data: BirthData, status?: 'Pending') =>
+  apiClient.post<AppSaveResult>('/api/birth/Update', { app_id: appId, data, status });
 
 // ── SUBMIT A DRAFT (Draft -> Pending, needs the authorizing officer) ───────
 // POST /api/birth/Submit
@@ -107,6 +107,15 @@ const emptyPayload = (): BirthApplicationPayload => ({
 const dateForInput = (value?: string | null) => value?.slice(0, 10) ?? '';
 const timeForInput = (value?: string | null) => value?.split('T').pop() ?? '';
 const optionalText = (value: string) => value.trim() || undefined;
+
+const normalizeStatus = (value: string): BirthApplication['status'] => {
+  const status = value.toLowerCase();
+  if (status === 'draft') return 'Draft';
+  if (status === 'pending') return 'Pending';
+  if (status === 'approved') return 'Approved';
+  if (status === 'rejected') return 'Rejected';
+  throw new Error(`Unsupported birth application status: ${value}`);
+};
 
 function toDate(value: string, label: string, required: true): string;
 function toDate(value: string, label: string, required?: false): string | undefined;
@@ -182,7 +191,7 @@ const mapBirthRecord = (record: BirthRecord): BirthApplication => ({
   id: String(record.birth_app_id),
   appRef: record.app_ref,
   applicantId: '',
-  status: record.status,
+  status: normalizeStatus(record.status),
   rejectionReason: record.rejection_reason ?? '',
   submittedOn: record.created_at ?? '',
   submittedBy: '',
@@ -202,7 +211,7 @@ const mapBirthListItem = (item: BirthListItem): BirthApplication => ({
   id: String(item.app_id),
   appRef: item.app_ref,
   applicantId: '',
-  status: item.status,
+  status: normalizeStatus(item.status),
   rejectionReason: item.rejection_reason ?? '',
   submittedOn: item.created_at,
   submittedBy: '',
@@ -243,8 +252,12 @@ export const birthService = {
     return createBirthAndSubmit(data, credentials);
   },
 
-  async update(id: string, payload: BirthApplicationPayload): Promise<AppSaveResult> {
-    return updateBirth(toAppId(id), toBirthData(payload));
+  async update(
+    id: string,
+    payload: BirthApplicationPayload,
+    status?: 'Pending',
+  ): Promise<AppSaveResult> {
+    return updateBirth(toAppId(id), toBirthData(payload), status);
   },
 
   async submit(id: string, credentials: SignOffCredentials): Promise<AppSaveResult> {
