@@ -368,17 +368,6 @@ export default function DistrictApplicationDetailScreen() {
           <SummaryField label="Current Status" value={applicationStatus} />
         </View>
 
-        {canEditPendingApplication ? (
-          <Pressable
-            onPress={() => setEditingApplication(true)}
-            style={styles.editButton}
-            accessibilityRole="button"
-          >
-            <Ionicons name="create-outline" size={18} color={colors.white} />
-            <Text style={styles.decisionText}>Edit My Pending Application</Text>
-          </Pressable>
-        ) : null}
-
         {applicationStatus === 'Pending' ? (
           <View style={styles.decisionRow}>
             <Pressable

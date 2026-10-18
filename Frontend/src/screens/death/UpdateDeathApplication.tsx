@@ -227,24 +227,6 @@ export default function UpdateDeathApplication({
 
         </SectionCard>
 
-<<<<<<< HEAD
-        {canEdit ? (
-          <Pressable
-            onPress={onEdit}
-            className="mb-4 items-center rounded-xl border border-[#0B2855] bg-white py-4"
-          >
-            <Text className="text-[13px] font-bold text-[#0B2855]">
-              Edit Application Details
-            </Text>
-          </Pressable>
-        ) : application.status === "Approved" ? (
-          <View className="mb-4 rounded-xl border border-[#B7E4C7] bg-[#E8F7EF] px-4 py-3">
-            <Text className="text-[12px] font-bold text-[#16804B]">
-              This application is approved and can no longer be edited.
-            </Text>
-          </View>
-        ) : null}
-=======
         <Pressable
           onPress={onEdit}
           className="mb-4 items-center rounded-xl border border-[#0B2855] bg-white py-4"
@@ -254,7 +236,6 @@ export default function UpdateDeathApplication({
             Edit Application Details
           </Text>
         </Pressable>
->>>>>>> gagana
 
         {/* =================================================
             CAUSE OF DEATH
