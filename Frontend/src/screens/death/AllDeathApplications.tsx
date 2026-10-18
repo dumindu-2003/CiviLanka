@@ -73,11 +73,8 @@ export default function AllDeathApplications({
   const dispatch = useAppDispatch();
   const applications = useAppSelector((state) => state.death.queue);
   const status = useAppSelector((state) => state.death.status);
-<<<<<<< HEAD
   const user = useAppSelector((state) => state.auth.user);
 
-=======
->>>>>>> gagana
   const [selectedApplication, setSelectedApplication] =
     useState<DeathApplication | null>(null);
   const [editingApplication, setEditingApplication] = useState(false);

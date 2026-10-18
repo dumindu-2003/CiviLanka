@@ -50,4 +50,9 @@
 10/17/2026 22:38:37 ~ Update ~ Record not found, or it can no longer be edited.;
 10/17/2026 22:41:46 ~ Update ~ Record not found, or it can no longer be edited.;
 10/17/2026 22:41:56 ~ Update ~ Record not found, or it can no longer be edited.;
+<<<<<<< HEAD
+>>>>>>> gagana
+=======
+10/17/2026 23:08:58 ~ Create ~ The INSERT statement conflicted with the CHECK constraint "ck_death_marital". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.death_certificate_application", column 'marital_status'.;
+10/17/2026 23:09:19 ~ Create ~ The INSERT statement conflicted with the CHECK constraint "ck_death_marital". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.death_certificate_application", column 'marital_status'.;
 >>>>>>> gagana
