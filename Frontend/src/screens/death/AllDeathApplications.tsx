@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import type { AlertButton } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import UpdateDeathApplication from "./UpdateDeathApplication";
@@ -22,11 +23,13 @@ import { errorMessage } from "../../utils/errorMessage";
 import type {
   DeathApplication,
   DeathApplicationPayload,
+  DeathStatus,
 } from "../../types/death";
 
 type Props = {
   onBack: () => void;
   initialApplicationId?: string | null;
+  initialStatusFilter?: DeathStatus;
 };
 
 function toDeathPayload(application: DeathApplication): DeathApplicationPayload {
@@ -69,6 +72,7 @@ function toDeathPayload(application: DeathApplication): DeathApplicationPayload 
 export default function AllDeathApplications({
   onBack,
   initialApplicationId,
+  initialStatusFilter,
 }: Props) {
   const dispatch = useAppDispatch();
   const applications = useAppSelector((state) => state.death.queue);
@@ -78,6 +82,13 @@ export default function AllDeathApplications({
   const [selectedApplication, setSelectedApplication] =
     useState<DeathApplication | null>(null);
   const [editingApplication, setEditingApplication] = useState(false);
+  const [hiddenRejectedIds, setHiddenRejectedIds] = useState<string[]>([]);
+  const visibleApplications = applications.filter(
+    (application) => !hiddenRejectedIds.includes(application.id)
+  );
+  const displayedApplications = initialStatusFilter
+    ? visibleApplications.filter((application) => application.status === initialStatusFilter)
+    : visibleApplications;
 
   useEffect(() => {
     void dispatch(loadDeathApplications());
@@ -99,6 +110,25 @@ export default function AllDeathApplications({
         error instanceof Error ? error.message : "Please try again."
       );
     }
+  };
+
+  const handleDeleteRejectedApplication = (application: DeathApplication) => {
+    const buttons: AlertButton[] = [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () =>
+          setHiddenRejectedIds((ids) =>
+            ids.includes(application.id) ? ids : [...ids, application.id]
+          ),
+      },
+    ];
+    Alert.alert(
+      "Remove rejected application?",
+      "This removes the application from this screen only. It will not be deleted from the server.",
+      buttons
+    );
   };
 
   useEffect(() => {
@@ -211,15 +241,15 @@ export default function AllDeathApplications({
      COUNTS
   ======================================================= */
 
-  const total = applications.length;
+  const total = visibleApplications.length;
 
-  const open = applications.filter((item) => item.status === "Pending").length;
+  const open = visibleApplications.filter((item) => item.status === "Pending").length;
 
-  const approved = applications.filter(
+  const approved = visibleApplications.filter(
     (item) => item.status === "Approved"
   ).length;
 
-  const rejected = applications.filter(
+  const rejected = visibleApplications.filter(
     (item) => item.status === "Rejected"
   ).length;
 
@@ -346,9 +376,9 @@ export default function AllDeathApplications({
             APPLICATION CARDS
         ================================================== */}
 
-        {status === "loading" && applications.length === 0 ? (
+        {status === "loading" && displayedApplications.length === 0 ? (
           <ActivityIndicator className="mt-4" />
-        ) : applications.map((application) => (
+        ) : displayedApplications.map((application) => (
           <DeathApplicationCard
             key={application.id}
             application={application}
@@ -356,13 +386,26 @@ export default function AllDeathApplications({
             onView={() =>
               handleViewApplication(application)
             }
+            onDelete={() => handleDeleteRejectedApplication(application)}
           />
         ))}
-        {status === "failed" && applications.length === 0 && (
+        {status === "failed" && displayedApplications.length === 0 && (
           <Text className="text-center text-[12px] text-[#C62828]">
             Unable to load death applications.
           </Text>
         )}
+        {status !== "loading" && displayedApplications.length === 0 ? (
+          <View className="mt-4 items-center rounded-xl border border-[#E3E7ED] bg-white px-5 py-10">
+            <Text className="text-[16px] font-bold text-[#171717]">
+              {initialStatusFilter ? `No ${initialStatusFilter} Applications` : "No Applications"}
+            </Text>
+            <Text className="mt-1 text-center text-[11px] text-[#737B87]">
+              {initialStatusFilter
+                ? `There are no ${initialStatusFilter.toLowerCase()} death applications available.`
+                : "There are no death registration applications available."}
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -376,12 +419,14 @@ type CardProps = {
   application: DeathApplication;
   incoming?: boolean;
   onView: () => void;
+  onDelete: () => void;
 };
 
 function DeathApplicationCard({
   application,
   incoming = false,
   onView,
+  onDelete,
 }: CardProps) {
   const statusStyle =
     application.status === "Approved"
@@ -483,14 +528,28 @@ function DeathApplicationCard({
 
         {/* View button */}
 
-        <Pressable
-          onPress={onView}
-          className="mt-5 h-[43px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
-        >
-          <Text className="text-[11px] font-bold text-white">
-            View Application
-          </Text>
-        </Pressable>
+        <View className="mt-5 flex-row gap-2">
+          <Pressable
+            onPress={onView}
+            className="h-[43px] flex-1 items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
+          >
+            <Text className="text-[11px] font-bold text-white">
+              View Application
+            </Text>
+          </Pressable>
+          {application.status === "Rejected" ? (
+            <Pressable
+              onPress={onDelete}
+              className="h-[43px] items-center justify-center rounded-lg border border-[#C62828] px-4 active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel={`Remove rejected application ${application.id} from this screen`}
+            >
+              <Text className="text-[11px] font-bold text-[#C62828]">
+                Delete
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );

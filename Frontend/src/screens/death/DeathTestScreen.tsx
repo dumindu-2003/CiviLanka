@@ -13,7 +13,7 @@ import AllDeathApplications from "./AllDeathApplications";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { createDeathApplication, loadDeathApplications } from "../../actions/deathAction";
 import type { SignOffCredentials } from "../../types/auth";
-import type { DeathApplicationPayload } from "../../types/death";
+import type { DeathApplicationPayload, DeathStatus } from "../../types/death";
 
 export default function DeathTestScreen() {
   const dispatch = useAppDispatch();
@@ -29,6 +29,7 @@ export default function DeathTestScreen() {
   const [showAllApplications, setShowAllApplications] =
     useState(false);
   const [applicationToOpen, setApplicationToOpen] = useState<string | null>(null);
+  const [applicationFilter, setApplicationFilter] = useState<DeathStatus | undefined>();
 
   useEffect(() => {
     void dispatch(loadDeathApplications());
@@ -79,6 +80,7 @@ export default function DeathTestScreen() {
           setApplicationToOpen(null);
         }}
         initialApplicationId={applicationToOpen}
+        initialStatusFilter={applicationFilter}
       />
     );
   }
@@ -93,6 +95,13 @@ export default function DeathTestScreen() {
 
   const handleViewCertificates = () => {
     setApplicationToOpen(null);
+    setApplicationFilter(undefined);
+    setShowAllApplications(true);
+  };
+
+  const handleFilterApplications = (filter: DeathStatus) => {
+    setApplicationToOpen(null);
+    setApplicationFilter(filter);
     setShowAllApplications(true);
   };
 
@@ -121,6 +130,12 @@ export default function DeathTestScreen() {
       </View>
 
       <View className="mx-3 flex-row rounded-xl border border-[#E1E5EA] bg-white p-1 shadow-sm">
+        <StatCard
+          icon="▣"
+          number={String(registrations.length)}
+          description="Total"
+          iconColor="#0B2855"
+        />
         <StatCard
           icon="⌛"
           number={String(pendingCount)}
@@ -161,6 +176,24 @@ export default function DeathTestScreen() {
             View All Death Certificates
           </Text>
         </Pressable>
+
+        <Text className="mt-3 text-[12px] font-bold text-[#292929]">
+          Filter by Status
+        </Text>
+        <View className="mt-2 flex-row gap-2">
+          <StatusFilterButton
+            label="Pending"
+            onPress={() => handleFilterApplications("Pending")}
+          />
+          <StatusFilterButton
+            label="Approved"
+            onPress={() => handleFilterApplications("Approved")}
+          />
+          <StatusFilterButton
+            label="Rejected"
+            onPress={() => handleFilterApplications("Rejected")}
+          />
+        </View>
       </View>
 
       <View className="mt-6 flex-row items-center justify-between px-4">
@@ -217,6 +250,25 @@ function StatCard({ icon, number, description, iconColor }: StatCardProps) {
         {description}
       </Text>
     </View>
+  );
+}
+
+function StatusFilterButton({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="h-[42px] flex-1 items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
+      accessibilityRole="button"
+      accessibilityLabel={`View ${label.toLowerCase()} death applications`}
+    >
+      <Text className="text-[12px] font-semibold text-white">{label}</Text>
+    </Pressable>
   );
 }
 

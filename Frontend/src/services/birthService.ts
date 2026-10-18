@@ -204,26 +204,6 @@ const mapBirthRecord = (record: BirthRecord): BirthApplication => ({
   updatedBy: '',
 });
 
-const mapBirthListItem = (item: BirthListItem): BirthApplication => ({
-  ...emptyPayload(),
-  babyName: item.name,
-  birthDate: dateForInput(item.date_of_birth),
-  id: String(item.app_id),
-  appRef: item.app_ref,
-  applicantId: '',
-  status: normalizeStatus(item.status),
-  rejectionReason: item.rejection_reason ?? '',
-  submittedOn: item.created_at,
-  submittedBy: '',
-  signedOffBy: '',
-  approvedBy: '',
-  approvedAt: '',
-  createdAt: item.created_at,
-  updatedAt: '',
-  createdBy: '',
-  updatedBy: '',
-});
-
 const toAppId = (id: string): number => {
   const appId = Number(id);
   if (!Number.isInteger(appId) || appId <= 0) {
@@ -234,7 +214,10 @@ const toAppId = (id: string): number => {
 
 export const birthService = {
   async getQueue(): Promise<BirthApplication[]> {
-    return (await getBirthList()).map(mapBirthListItem);
+    const items = await getBirthList();
+    return Promise.all(
+      items.map(async (item) => mapBirthRecord(await getBirthById(item.app_id))),
+    );
   },
 
   async get(id: string): Promise<BirthApplication> {

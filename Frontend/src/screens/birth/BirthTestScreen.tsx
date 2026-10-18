@@ -12,7 +12,7 @@ import ApplicationForm from "./BirthApplicationForm";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { createBirthApplication, loadBirthApplications } from "../../actions/birthAction";
 import type { SignOffCredentials } from "../../types/auth";
-import type { BirthApplicationPayload } from "../../types/birth";
+import type { BirthApplicationPayload, BirthStatus } from "../../types/birth";
 
 export default function BirthTestScreen() {
   const dispatch = useAppDispatch();
@@ -24,6 +24,7 @@ export default function BirthTestScreen() {
   const [showAllApplications, setShowAllApplications] =
   useState(false);
   const [applicationToOpen, setApplicationToOpen] = useState<string | null>(null);
+  const [applicationFilter, setApplicationFilter] = useState<BirthStatus | undefined>();
 
   useEffect(() => {
     void dispatch(loadBirthApplications());
@@ -70,6 +71,7 @@ export default function BirthTestScreen() {
           setApplicationToOpen(null);
         }}
         initialApplicationId={applicationToOpen}
+        initialStatusFilter={applicationFilter}
         />
     );
   }
@@ -84,8 +86,15 @@ export default function BirthTestScreen() {
 
   const handleViewCertificates = () => {
     setApplicationToOpen(null);
+    setApplicationFilter(undefined);
     setShowAllApplications(true);
     console.log("View All Birth Certificates");
+  };
+
+  const handleFilterApplications = (filter: BirthStatus) => {
+    setApplicationToOpen(null);
+    setApplicationFilter(filter);
+    setShowAllApplications(true);
   };
 
   const handleViewApplication = (id: string) => {
@@ -122,6 +131,12 @@ export default function BirthTestScreen() {
         ================================================== */}
 
         <View className="mx-3 flex-row rounded-xl border border-[#E1E5EA] bg-white p-1 shadow-sm">
+          <StatCard
+            icon="▣"
+            number={String(registrations.length)}
+            description="Total"
+            iconColor="#0B2855"
+          />
           <StatCard
             icon="⌛"
             number={String(pendingCount)}
@@ -178,6 +193,24 @@ export default function BirthTestScreen() {
                 View All Birth Certificates
             </Text>
         </Pressable>
+
+          <Text className="mt-3 text-[12px] font-bold text-[#292929]">
+            Filter by Status
+          </Text>
+          <View className="mt-2 flex-row gap-2">
+            <StatusFilterButton
+              label="Pending"
+              onPress={() => handleFilterApplications("Pending")}
+            />
+            <StatusFilterButton
+              label="Approved"
+              onPress={() => handleFilterApplications("Approved")}
+            />
+            <StatusFilterButton
+              label="Rejected"
+              onPress={() => handleFilterApplications("Rejected")}
+            />
+          </View>
         </View>
 
         {/* =================================================
@@ -250,6 +283,25 @@ function StatCard({
         {description}
       </Text>
     </View>
+  );
+}
+
+function StatusFilterButton({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="h-[42px] flex-1 items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
+      accessibilityRole="button"
+      accessibilityLabel={`View ${label.toLowerCase()} birth applications`}
+    >
+      <Text className="text-[12px] font-semibold text-white">{label}</Text>
+    </Pressable>
   );
 }
 

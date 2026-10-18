@@ -56,3 +56,4 @@
 10/17/2026 23:08:58 ~ Create ~ The INSERT statement conflicted with the CHECK constraint "ck_death_marital". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.death_certificate_application", column 'marital_status'.;
 10/17/2026 23:09:19 ~ Create ~ The INSERT statement conflicted with the CHECK constraint "ck_death_marital". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.death_certificate_application", column 'marital_status'.;
 >>>>>>> gagana
+10/18/2026 08:34:58 ~ Create ~ The INSERT statement conflicted with the CHECK constraint "ck_death_marital". The conflict occurred in database "civil_registration_db.bacpac", table "dbo.death_certificate_application", column 'marital_status'.;

@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import type { AlertButton } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import UpdateBirthApplication from "./UpdateBirthApplication";
@@ -20,11 +21,13 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import type {
   BirthApplication,
   BirthApplicationPayload,
+  BirthStatus,
 } from "../../types/birth";
 
 type Props = {
   onBack: () => void;
   initialApplicationId?: string | null;
+  initialStatusFilter?: BirthStatus;
 };
 
 function toBirthPayload(application: BirthApplication): BirthApplicationPayload {
@@ -66,13 +69,24 @@ function toBirthPayload(application: BirthApplication): BirthApplicationPayload 
   };
 }
 
-export default function AllBirthAplications({ onBack, initialApplicationId }: Props) {
+export default function AllBirthAplications({
+  onBack,
+  initialApplicationId,
+  initialStatusFilter,
+}: Props) {
   const dispatch = useAppDispatch();
   const registrations = useAppSelector((state) => state.birth.queue);
   const status = useAppSelector((state) => state.birth.status);
   const [selectedApplication, setSelectedApplication] =
     useState<BirthApplication | null>(null);
   const [editingApplication, setEditingApplication] = useState(false);
+  const [hiddenRejectedIds, setHiddenRejectedIds] = useState<string[]>([]);
+  const visibleRegistrations = registrations.filter(
+    (registration) => !hiddenRejectedIds.includes(registration.id)
+  );
+  const displayedRegistrations = initialStatusFilter
+    ? visibleRegistrations.filter((registration) => registration.status === initialStatusFilter)
+    : visibleRegistrations;
 
   useEffect(() => {
     void dispatch(loadBirthApplications());
@@ -89,6 +103,25 @@ export default function AllBirthAplications({ onBack, initialApplicationId }: Pr
         error instanceof Error ? error.message : "Please try again."
       );
     }
+  };
+
+  const handleDeleteRejectedApplication = (registration: BirthApplication) => {
+    const buttons: AlertButton[] = [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () =>
+          setHiddenRejectedIds((ids) =>
+            ids.includes(registration.id) ? ids : [...ids, registration.id]
+          ),
+      },
+    ];
+    Alert.alert(
+      "Remove rejected application?",
+      "This removes the application from this screen only. It will not be deleted from the server.",
+      buttons
+    );
   };
 
   useEffect(() => {
@@ -149,15 +182,15 @@ export default function AllBirthAplications({ onBack, initialApplicationId }: Pr
   }
 
   // Counts
-  const totalCount = registrations.length;
+  const totalCount = visibleRegistrations.length;
 
-  const openCount = registrations.filter((item) => item.status === "Pending").length;
+  const openCount = visibleRegistrations.filter((item) => item.status === "Pending").length;
 
-  const approvedCount = registrations.filter(
+  const approvedCount = visibleRegistrations.filter(
     (item) => item.status === "Approved"
   ).length;
 
-  const rejectedCount = registrations.filter(
+  const rejectedCount = visibleRegistrations.filter(
     (item) => item.status === "Rejected"
   ).length;
 
@@ -268,34 +301,37 @@ export default function AllBirthAplications({ onBack, initialApplicationId }: Pr
 
         {/* ================= APPLICATION LIST ================= */}
         <View>
-          {status === "loading" && registrations.length === 0 ? (
+          {status === "loading" && displayedRegistrations.length === 0 ? (
             <ActivityIndicator className="mt-4" />
-          ) : registrations.map((registration) => (
+          ) : displayedRegistrations.map((registration) => (
             <BirthApplicationCard
               key={registration.id}
               registration={registration}
               onView={() =>
                 handleViewApplication(registration)
               }
+              onDelete={() => handleDeleteRejectedApplication(registration)}
             />
           ))}
         </View>
 
         {/* Empty State */}
-        {status === "failed" && registrations.length === 0 && (
+        {status === "failed" && displayedRegistrations.length === 0 && (
           <Text className="text-center text-[12px] text-[#C62828]">
             Unable to load birth applications.
           </Text>
         )}
 
-        {status !== "loading" && registrations.length === 0 && (
+        {status !== "loading" && displayedRegistrations.length === 0 && (
           <View className="items-center rounded-xl border border-[#E3E7ED] bg-white px-5 py-10">
             <Text className="text-[16px] font-bold text-[#171717]">
-              No Applications
+              {initialStatusFilter ? `No ${initialStatusFilter} Applications` : "No Applications"}
             </Text>
 
             <Text className="mt-1 text-center text-[11px] text-[#737B87]">
-              There are no birth registration applications available.
+              {initialStatusFilter
+                ? `There are no ${initialStatusFilter.toLowerCase()} birth applications available.`
+                : "There are no birth registration applications available."}
             </Text>
           </View>
         )}
@@ -311,11 +347,13 @@ export default function AllBirthAplications({ onBack, initialApplicationId }: Pr
 type CardProps = {
   registration: BirthApplication;
   onView: () => void;
+  onDelete: () => void;
 };
 
 function BirthApplicationCard({
   registration,
   onView,
+  onDelete,
 }: CardProps) {
   const getStatusStyle = () => {
     if (registration.status === "Approved") {
@@ -438,14 +476,28 @@ function BirthApplicationCard({
         </View>
 
         {/* ================= VIEW BUTTON ================= */}
-        <Pressable
-          onPress={onView}
-          className="mt-5 h-[44px] items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
-        >
-          <Text className="text-[12px] font-bold text-white">
-            View Application
-          </Text>
-        </Pressable>
+        <View className="mt-5 flex-row gap-2">
+          <Pressable
+            onPress={onView}
+            className="h-[44px] flex-1 items-center justify-center rounded-lg bg-[#0B2855] active:opacity-80"
+          >
+            <Text className="text-[12px] font-bold text-white">
+              View Application
+            </Text>
+          </Pressable>
+          {registration.status === "Rejected" ? (
+            <Pressable
+              onPress={onDelete}
+              className="h-[44px] items-center justify-center rounded-lg border border-[#C62828] px-4 active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel={`Remove rejected application ${registration.id} from this screen`}
+            >
+              <Text className="text-[12px] font-bold text-[#C62828]">
+                Delete
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );

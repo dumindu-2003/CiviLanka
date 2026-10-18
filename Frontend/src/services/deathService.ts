@@ -214,26 +214,6 @@ const mapDeathRecord = (record: DeathRecord): DeathApplication => ({
   updatedBy: '',
 });
 
-const mapDeathListItem = (item: DeathListItem): DeathApplication => ({
-  ...emptyPayload(),
-  deceasedName: item.name,
-  dateOfDemise: dateForInput(item.date_of_death),
-  id: String(item.app_id),
-  appRef: item.app_ref,
-  applicantId: '',
-  status: normalizeStatus(item.status),
-  rejectionReason: item.rejection_reason ?? '',
-  submittedOn: item.created_at,
-  submittedBy: item.submitted_by == null ? '' : String(item.submitted_by),
-  signedOffBy: '',
-  approvedBy: '',
-  approvedAt: '',
-  createdAt: item.created_at,
-  updatedAt: '',
-  createdBy: '',
-  updatedBy: '',
-});
-
 const toAppId = (id: string): number => {
   const appId = Number(id);
   if (!Number.isInteger(appId) || appId <= 0) {
@@ -244,7 +224,10 @@ const toAppId = (id: string): number => {
 
 export const deathService = {
   async getQueue(): Promise<DeathApplication[]> {
-    return (await getDeathList()).map(mapDeathListItem);
+    const items = await getDeathList();
+    return Promise.all(
+      items.map(async (item) => mapDeathRecord(await getDeathById(item.app_id))),
+    );
   },
 
   async get(id: string): Promise<DeathApplication> {
